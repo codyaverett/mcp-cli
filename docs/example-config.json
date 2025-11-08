@@ -1,0 +1,31 @@
+{
+  "servers": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp"
+      ],
+      "env": {}
+    },
+    "github": {
+      "type": "sse",
+      "url": "http://localhost:3000/sse",
+      "apiKey": "${GITHUB_TOKEN}"
+    },
+    "slack": {
+      "type": "http",
+      "url": "https://api.slack.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SLACK_TOKEN}"
+      }
+    }
+  },
+  "preferences": {
+    "defaultTimeout": 30000,
+    "maxRetries": 3,
+    "logLevel": "info"
+  }
+}

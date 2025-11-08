@@ -1,0 +1,10 @@
+src/
+tests/
+*.test.ts
+.gitignore
+tsconfig.json
+.eslintrc.json
+.prettierrc
+coverage/
+.vscode/
+.idea/
