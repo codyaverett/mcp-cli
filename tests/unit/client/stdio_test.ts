@@ -45,6 +45,10 @@ class MockClient {
     this.connected = false;
   }
 
+  isConnected(): boolean {
+    return this.connected;
+  }
+
   getServerVersion(): unknown {
     return this.mockData.serverVersion || {
       protocolVersion: "1.0.0",
