@@ -6,10 +6,12 @@ import {
   testServer,
   getServerInfo,
   inspectServer,
+  initConfig,
 } from "../../../src/commands/servers.ts";
 import { configLoader } from "../../../src/config/loader.ts";
 import { clientPool } from "../../../src/client/factory.ts";
 import { JSONFormatter } from "../../../src/utils/json.ts";
+import { Platform } from "../../../src/utils/platform.ts";
 import { MockMCPClient } from "../../fixtures/mock-client.ts";
 import { SAMPLE_SERVER_INFO, SAMPLE_TOOLS, SAMPLE_RESOURCES, SAMPLE_PROMPTS } from "../../fixtures/test-data.ts";
 import type { StdioServerConfig, Config } from "../../../src/types/config.ts";
@@ -610,6 +612,136 @@ Deno.test("listServers - handles errors gracefully", async () => {
     assertEquals(exitCode, 1);
     const output = capturedOutput[0] as { error: unknown };
     assertExists(output.error);
+  } finally {
+    teardown();
+  }
+});
+
+Deno.test("initConfig - creates global config by default", async () => {
+  setup();
+
+  try {
+    const testConfigPath = "./tests/fixtures/test-global-config.json";
+
+    // Mock Platform.getConfigPath to return test path
+    const originalGetConfigPath = Platform.getConfigPath;
+    Platform.getConfigPath = () => testConfigPath;
+
+    await initConfig({});
+
+    assertEquals(capturedOutput.length, 1);
+    const output = capturedOutput[0] as { success: boolean; data: { path: string; type: string } };
+    assertEquals(output.success, true);
+    assertEquals(output.data.type, "global");
+    assertEquals(output.data.path.includes("test-global-config.json"), true);
+
+    // Verify file was created
+    const exists = await Platform.fileExists(testConfigPath);
+    assertEquals(exists, true);
+
+    // Cleanup
+    await Deno.remove(testConfigPath);
+    Platform.getConfigPath = originalGetConfigPath;
+  } finally {
+    teardown();
+  }
+});
+
+Deno.test("initConfig - creates local config when --local is specified", async () => {
+  setup();
+
+  try {
+    await initConfig({ local: true });
+
+    assertEquals(capturedOutput.length, 1);
+    const output = capturedOutput[0] as { success: boolean; data: { path: string; type: string } };
+    assertEquals(output.success, true);
+    assertEquals(output.data.type, "local");
+
+    // Note: The actual path will be relative to cwd, not the test path
+    // Just verify the type is correct
+  } finally {
+    teardown();
+    // Cleanup if file was created in cwd
+    try {
+      await Deno.remove("./.mcp-cli.json");
+    } catch {
+      // Ignore if not exists
+    }
+  }
+});
+
+Deno.test("initConfig - creates config at custom path", async () => {
+  setup();
+
+  try {
+    const testConfigPath = "./tests/fixtures/custom-mcp-config.json";
+
+    await initConfig({ path: testConfigPath });
+
+    assertEquals(capturedOutput.length, 1);
+    const output = capturedOutput[0] as { success: boolean; data: { path: string } };
+    assertEquals(output.success, true);
+    assertEquals(output.data.path.includes("custom-mcp-config.json"), true);
+
+    // Verify file was created
+    const exists = await Platform.fileExists(testConfigPath);
+    assertEquals(exists, true);
+
+    // Cleanup
+    await Deno.remove(testConfigPath);
+  } finally {
+    teardown();
+  }
+});
+
+Deno.test("initConfig - fails if config exists without --force", async () => {
+  setup();
+
+  try {
+    const testConfigPath = "./tests/fixtures/existing-config.json";
+
+    // Create existing config
+    await Deno.writeTextFile(testConfigPath, "{}");
+
+    await initConfig({ path: testConfigPath });
+
+    assertEquals(capturedOutput.length, 1);
+    assertEquals(exitCode, 1);
+    const output = capturedOutput[0] as { success: boolean; error: { message: string } };
+    assertEquals(output.success, false);
+    assertEquals(output.error.message.includes("already exists"), true);
+
+    // Cleanup
+    await Deno.remove(testConfigPath);
+  } finally {
+    teardown();
+  }
+});
+
+Deno.test("initConfig - overwrites existing config with --force", async () => {
+  setup();
+
+  try {
+    const testConfigPath = "./tests/fixtures/force-config.json";
+
+    // Create existing config
+    await Deno.writeTextFile(testConfigPath, '{"old": "data"}');
+
+    await initConfig({ path: testConfigPath, force: true });
+
+    assertEquals(capturedOutput.length, 1);
+    const output = capturedOutput[0] as { success: boolean };
+    assertEquals(output.success, true);
+
+    // Verify file was overwritten with new config
+    const content = await Deno.readTextFile(testConfigPath);
+    const config = JSON.parse(content);
+    assertEquals(config.servers, {});
+    assertExists(config.preferences);
+
+    // Cleanup
+    await Deno.remove(testConfigPath);
   } finally {
     teardown();
   }

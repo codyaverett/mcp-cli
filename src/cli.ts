@@ -144,6 +144,16 @@ serversCommand
     await serversCmd.inspectServer(name);
   });
 
+serversCommand
+  .command("init")
+  .description("Initialize MCP configuration file")
+  .option("--local", "Create config in current directory (.mcp-cli.json)")
+  .option("--path <path:string>", "Create config at specific path")
+  .option("--force", "Overwrite existing configuration file")
+  .action(async (options) => {
+    await serversCmd.initConfig(options);
+  });
+
 // Tools command group
 const toolsCommand = new Command()
   .name("tools")

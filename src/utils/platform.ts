@@ -1,4 +1,4 @@
-import { join, normalize } from "@std/path";
+import { dirname, join, normalize, resolve } from "@std/path";
 
 /**
  * Cross-platform utility functions
@@ -141,5 +141,96 @@ export class Platform {
       }
       throw error;
     }
+  }
+
+  /**
+   * Get current working directory
+   */
+  static getCurrentDir(): string {
+    return Deno.cwd();
+  }
+
+  /**
+   * Find config file by walking up directory tree
+   * Searches for .mcp-cli.json starting from current directory
+   * @param startDir - Directory to start search from (defaults to cwd)
+   * @param filename - Config filename to search for (defaults to .mcp-cli.json)
+   * @returns Path to config file if found, null otherwise
+   */
+  static async findConfigFile(
+    startDir?: string,
+    filename = ".mcp-cli.json",
+  ): Promise<string | null> {
+    // Resolve to absolute path first
+    let currentDir = resolve(startDir || this.getCurrentDir());
+    const root = Deno.build.os === "windows" ? currentDir.split("\\")[0] + "\\" : "/";
+
+    // Safety check to prevent infinite loops
+    let depth = 0;
+    const maxDepth = 100;
+
+    while (depth < maxDepth) {
+      const configPath = join(currentDir, filename);
+      if (await this.fileExists(configPath)) {
+        return configPath;
+      }
+
+      // Check if we've reached root
+      if (currentDir === root) {
+        break;
+      }
+
+      // Move up one directory
+      const parentDir = dirname(currentDir);
+
+      // Break if we can't go up anymore
+      if (parentDir === currentDir) {
+        break;
+      }
+
+      currentDir = parentDir;
+      depth++;
+    }
+
+    return null;
+  }
+
+  /**
+   * Resolve config file path with priority:
+   * 1. Explicit path (if provided)
+   * 2. MCP_CONFIG environment variable
+   * 3. Local .mcp-cli.json (current directory)
+   * 4. Parent directory search for .mcp-cli.json
+   * 5. Global config (~/.mcp-cli/config.json)
+   *
+   * @param explicitPath - Path explicitly provided by user (e.g., via --config flag)
+   * @returns Resolved config path
+   */
+  static async resolveConfigPath(explicitPath?: string): Promise<string> {
+    // 1. Explicit path takes highest priority
+    if (explicitPath) {
+      return this.normalizePath(explicitPath);
+    }
+
+    // 2. Check MCP_CONFIG environment variable
+    const envConfigPath = Deno.env.get("MCP_CONFIG");
+    if (envConfigPath) {
+      return this.normalizePath(envConfigPath);
+    }
+
+    // 3. Check for local config in current directory
+    const localConfig = join(this.getCurrentDir(), ".mcp-cli.json");
+    if (await this.fileExists(localConfig)) {
+      return localConfig;
+    }
+
+    // 4. Walk up directory tree to find config
+    const foundConfig = await this.findConfigFile();
+    if (foundConfig) {
+      return foundConfig;
+    }
+
+    // 5. Fall back to global config
+    return this.getConfigPath();
   }
 }

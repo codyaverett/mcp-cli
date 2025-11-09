@@ -62,6 +62,11 @@ Download from [releases](https://github.com/cosmic/mcp-cli/releases)
 ### Basic Usage
 
 ```bash
+# Initialize MCP configuration
+mcp servers init                    # Create global config at ~/.mcp-cli/config.json
+mcp servers init --local            # Create local config at ./.mcp-cli.json
+mcp servers init --path ./my-config.json  # Create config at custom path
+
 # Add a server
 mcp servers add filesystem --type stdio \
   --command npx \
@@ -114,12 +119,41 @@ mcp tools schema github create_issue
 
 ## Configuration
 
-Config file location:
+### Config File Discovery
+
+MCP CLI supports both global and project-specific configurations with automatic discovery:
+
+**Priority order** (highest to lowest):
+1. **--config flag**: `mcp --config ./custom.json servers list`
+2. **MCP_CONFIG env var**: `MCP_CONFIG=./custom.json mcp servers list`
+3. **Local config**: `.mcp-cli.json` in current directory
+4. **Parent search**: Walks up directory tree to find `.mcp-cli.json`
+5. **Global config**: `~/.mcp-cli/config.json` (or platform-specific location)
+
+**Default global config locations**:
 - **Windows**: `%USERPROFILE%\.mcp-cli\config.json`
 - **macOS/Linux**: `~/.mcp-cli/config.json`
 - **Linux (XDG)**: `$XDG_CONFIG_HOME/mcp-cli/config.json`
 
-Example configuration:
+### Initialization
+
+Create a new config file with default settings:
+
+```bash
+# Create global config
+mcp servers init
+
+# Create local project config
+mcp servers init --local
+
+# Create config at custom path
+mcp servers init --path ./configs/mcp.json
+
+# Overwrite existing config
+mcp servers init --force
+```
+
+### Configuration Example
 ```json
 {
   "servers": {
@@ -146,9 +180,31 @@ Example configuration:
 
 Environment variables are supported with `${VAR_NAME}` syntax.
 
+### Use Cases
+
+**Global config for personal tools**:
+```bash
+mcp servers init
+mcp servers add my-tool --type stdio --command my-global-tool
+```
+
+**Project-specific config** (committed to git):
+```bash
+cd my-project
+mcp servers init --local
+mcp servers add project-db --type stdio --command ./scripts/db-tool.sh
+git add .mcp-cli.json
+```
+
+**Temporary config override**:
+```bash
+MCP_CONFIG=./test-config.json mcp tools list test-server
+```
+
 ## Commands
 
 ### Server Management
+- `mcp servers init [--local] [--path <path>] [--force]` - Initialize config file
 - `mcp servers list [--names-only] [--full]` - List servers
 - `mcp servers add <name> --type <stdio|sse|http>` - Add server
 - `mcp servers remove <name>` - Remove server

@@ -128,6 +128,15 @@ export interface ServerAddOptions {
 }
 
 /**
+ * Server init options
+ */
+export interface ServerInitOptions {
+  local?: boolean;
+  path?: string;
+  force?: boolean;
+}
+
+/**
  * Search result
  */
 export interface SearchResult {

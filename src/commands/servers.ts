@@ -1,11 +1,12 @@
-import { configLoader } from "../config/loader.ts";
+import { configLoader, ConfigLoader } from "../config/loader.ts";
 import { ConfigValidator } from "../config/validator.ts";
 import { clientPool } from "../client/factory.ts";
 import { JSONFormatter } from "../utils/json.ts";
 import { logger } from "../utils/logger.ts";
 import { Errors } from "../utils/errors.ts";
+import { Platform } from "../utils/platform.ts";
 import type { ServerConfig, ServerStatus } from "../types/config.ts";
-import type { ServerAddOptions, ServerListOptions } from "../types/commands.ts";
+import type { ServerAddOptions, ServerListOptions, ServerInitOptions } from "../types/commands.ts";
 
 /**
  * List all configured servers
@@ -274,6 +275,48 @@ export async function inspectServer(name: string): Promise<void> {
       name,
       Date.now() - startTime,
     );
+    JSONFormatter.output(response);
+  } catch (error) {
+    const mcpError = Errors.wrap(error);
+    JSONFormatter.output(mcpError.toJSON());
+    Deno.exit(1);
+  }
+}
+
+/**
+ * Initialize MCP configuration
+ * Creates a new config file with default settings
+ */
+export async function initConfig(options: ServerInitOptions): Promise<void> {
+  try {
+    let targetPath: string;
+
+    // Determine where to create the config
+    if (options.path) {
+      targetPath = Platform.normalizePath(options.path);
+    } else if (options.local) {
+      targetPath = Platform.normalizePath("./.mcp-cli.json");
+    } else {
+      targetPath = Platform.getConfigPath();
+    }
+
+    // Check if config already exists
+    const exists = await Platform.fileExists(targetPath);
+    if (exists && !options.force) {
+      throw Errors.validationError(
+        `Configuration file already exists at ${targetPath}. Use --force to overwrite.`
+      );
+    }
+
+    // Create config loader for target path
+    const loader = new ConfigLoader(targetPath);
+    const createdPath = await loader.createDefault(targetPath);
+
+    const response = JSONFormatter.success({
+      message: `Configuration initialized successfully`,
+      path: createdPath,
+      type: options.local ? "local" : "global",
+    });
     JSONFormatter.output(response);
   } catch (error) {
     const mcpError = Errors.wrap(error);

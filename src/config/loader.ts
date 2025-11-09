@@ -9,30 +9,44 @@ import { configSchema } from "./schema.ts";
  * Configuration loader with environment variable substitution
  */
 export class ConfigLoader {
-  private configPath: string;
+  private configPath: string | null = null;
+  private explicitPath: string | undefined;
   private config: Config | null = null;
 
   constructor(configPath?: string) {
-    this.configPath = configPath || Platform.getConfigPath();
+    this.explicitPath = configPath;
+  }
+
+  /**
+   * Resolve the config path using priority system
+   */
+  private async resolveConfigPath(): Promise<string> {
+    if (!this.configPath) {
+      this.configPath = await Platform.resolveConfigPath(this.explicitPath);
+    }
+    return this.configPath;
   }
 
   /**
    * Load configuration from file
    */
   async load(): Promise<Config> {
-    logger.debug("Loading configuration", { path: this.configPath });
+    const configPath = await this.resolveConfigPath();
+    logger.debug("Loading configuration", { path: configPath });
 
     // Check if config file exists
-    const exists = await Platform.fileExists(this.configPath);
+    const exists = await Platform.fileExists(configPath);
     if (!exists) {
-      logger.info("Configuration file not found, using empty config");
+      logger.info("Configuration file not found, using empty config", {
+        path: configPath
+      });
       this.config = { servers: {} };
       return this.config;
     }
 
     try {
       // Read and parse config file (supports JSON and JSONC)
-      const content = await Deno.readTextFile(this.configPath);
+      const content = await Deno.readTextFile(configPath);
       const parsed = parseJSON(content) as unknown;
 
       // Validate schema
@@ -42,17 +56,18 @@ export class ConfigLoader {
       this.config = this.substituteEnvVars(validated);
 
       logger.info("Configuration loaded successfully", {
+        path: configPath,
         servers: Object.keys(this.config.servers).length,
       });
 
       return this.config;
     } catch (error) {
       if (error instanceof Deno.errors.PermissionDenied) {
-        throw Errors.permissionDenied(this.configPath, "read");
+        throw Errors.permissionDenied(configPath, "read");
       }
 
       logger.error("Failed to load configuration", { error });
-      throw Errors.configParseError(this.configPath, error as Error);
+      throw Errors.configParseError(configPath, error as Error);
     }
   }
 
@@ -60,26 +75,27 @@ export class ConfigLoader {
    * Save configuration to file
    */
   async save(config: Config): Promise<void> {
-    logger.debug("Saving configuration", { path: this.configPath });
+    const configPath = await this.resolveConfigPath();
+    logger.debug("Saving configuration", { path: configPath });
 
     try {
       // Validate before saving
       configSchema.parse(config);
 
       // Ensure config directory exists
-      const configDir = Platform.getConfigDir();
+      const configDir = configPath.substring(0, configPath.lastIndexOf("/"));
       await Platform.ensureDir(configDir);
 
       // Write config file
       const content = JSON.stringify(config, null, 2);
-      await Deno.writeTextFile(this.configPath, content);
+      await Deno.writeTextFile(configPath, content);
 
       this.config = config;
 
-      logger.info("Configuration saved successfully");
+      logger.info("Configuration saved successfully", { path: configPath });
     } catch (error) {
       if (error instanceof Deno.errors.PermissionDenied) {
-        throw Errors.permissionDenied(this.configPath, "write");
+        throw Errors.permissionDenied(configPath, "write");
       }
 
       logger.error("Failed to save configuration", { error });
@@ -181,21 +197,23 @@ export class ConfigLoader {
   /**
    * Get config file path
    */
-  getConfigPath(): string {
-    return this.configPath;
+  async getConfigPath(): Promise<string> {
+    return await this.resolveConfigPath();
   }
 
   /**
    * Check if config file exists
    */
   async exists(): Promise<boolean> {
-    return await Platform.fileExists(this.configPath);
+    const configPath = await this.resolveConfigPath();
+    return await Platform.fileExists(configPath);
   }
 
   /**
    * Create default configuration file
+   * @param path - Optional explicit path to create config at
    */
-  async createDefault(): Promise<void> {
+  async createDefault(path?: string): Promise<string> {
     const defaultConfig: Config = {
       servers: {},
       preferences: {
@@ -206,7 +224,21 @@ export class ConfigLoader {
       },
     };
 
+    // If path is provided, temporarily override the config path
+    const originalExplicitPath = this.explicitPath;
+    if (path) {
+      this.explicitPath = path;
+      this.configPath = null; // Force re-resolution
+    }
+
     await this.save(defaultConfig);
+    const savedPath = await this.resolveConfigPath();
+
+    // Restore original path
+    this.explicitPath = originalExplicitPath;
+    this.configPath = null;
+
+    return savedPath;
   }
 }
 
