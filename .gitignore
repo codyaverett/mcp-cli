@@ -1,0 +1,39 @@
+# Deno
+.deno/
+deno.lock
+
+# Build output
+bin/
+dist/
+*.exe
+
+# Coverage
+coverage/
+.coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test artifacts
+.test-cache/
+
+# Node (for npm compatibility testing)
+node_modules/
+package-lock.json
