@@ -24,10 +24,14 @@ MCP CLI implements **lazy loading** of tool schemas:
 ❌ Load all 125 tools from 6 servers upfront
 
 # MCP CLI approach: Load only what's needed (350 tokens)
+✅ mcp discover "read a file"           # ~300 tokens (intelligent search)
+✅ mcp tools schema filesystem read_file   # ~200 tokens (just-in-time)
+✅ mcp tools exec filesystem read_file --args '{"path": "README.md"}'
+
+# OR: Step-by-step discovery
 ✅ mcp servers list --names-only        # ~50 tokens
 ✅ mcp tools list filesystem --names-only  # ~100 tokens
 ✅ mcp tools schema filesystem read_file   # ~200 tokens
-✅ mcp tools exec filesystem read_file --args '{"path": "README.md"}'
 ```
 
 **Result**: 99% reduction in context pollution, measurably better reasoning quality.
@@ -47,11 +51,13 @@ MCP CLI implements **lazy loading** of tool schemas:
 ### Installation
 
 **Deno (recommended)**:
+
 ```bash
 deno install -g -A -n mcp jsr:@cosmic/mcp-cli
 ```
 
 **npm**:
+
 ```bash
 npx jsr:@cosmic/mcp-cli
 ```
@@ -84,6 +90,10 @@ mcp tools schema filesystem read_file
 # Execute a tool
 mcp tools exec filesystem read_file --args '{"path": "README.md"}'
 
+# Intelligent discovery (recommended for AI agents)
+mcp discover                        # List all servers with capabilities
+mcp discover "read and write files" # Search + recommendations + suggested batch
+
 # Search across all servers
 mcp search "file operations"
 ```
@@ -93,6 +103,7 @@ mcp search "file operations"
 The CLI implements a three-tier disclosure pattern:
 
 ### 1. Names Only (Minimal Context)
+
 ```bash
 # Get server names (~50 tokens)
 mcp servers list --names-only
@@ -104,6 +115,7 @@ mcp tools list github --names-only
 ```
 
 ### 2. Brief Descriptions (Moderate Context)
+
 ```bash
 # Get tool descriptions (~500-1000 tokens)
 mcp tools list github --brief
@@ -111,6 +123,7 @@ mcp tools list github --brief
 ```
 
 ### 3. Full Schemas (High Context - Explicit Only)
+
 ```bash
 # Load complete schema when about to use (~200-500 tokens per tool)
 mcp tools schema github create_issue
@@ -124,6 +137,7 @@ mcp tools schema github create_issue
 MCP CLI supports both global and project-specific configurations with automatic discovery:
 
 **Priority order** (highest to lowest):
+
 1. **--config flag**: `mcp --config ./custom.json servers list`
 2. **MCP_CONFIG env var**: `MCP_CONFIG=./custom.json mcp servers list`
 3. **Local config**: `.mcp-cli.json` in current directory
@@ -131,6 +145,7 @@ MCP CLI supports both global and project-specific configurations with automatic 
 5. **Global config**: `~/.mcp-cli/config.json` (or platform-specific location)
 
 **Default global config locations**:
+
 - **Windows**: `%USERPROFILE%\.mcp-cli\config.json`
 - **macOS/Linux**: `~/.mcp-cli/config.json`
 - **Linux (XDG)**: `$XDG_CONFIG_HOME/mcp-cli/config.json`
@@ -154,6 +169,7 @@ mcp servers init --force
 ```
 
 ### Configuration Example
+
 ```json
 {
   "servers": {
@@ -183,12 +199,14 @@ Environment variables are supported with `${VAR_NAME}` syntax.
 ### Use Cases
 
 **Global config for personal tools**:
+
 ```bash
 mcp servers init
 mcp servers add my-tool --type stdio --command my-global-tool
 ```
 
 **Project-specific config** (committed to git):
+
 ```bash
 cd my-project
 mcp servers init --local
@@ -197,6 +215,7 @@ git add .mcp-cli.json
 ```
 
 **Temporary config override**:
+
 ```bash
 MCP_CONFIG=./test-config.json mcp tools list test-server
 ```
@@ -204,6 +223,7 @@ MCP_CONFIG=./test-config.json mcp tools list test-server
 ## Commands
 
 ### Server Management
+
 - `mcp servers init [--local] [--path <path>] [--force]` - Initialize config file
 - `mcp servers list [--names-only] [--full]` - List servers
 - `mcp servers add <name> --type <stdio|sse|http>` - Add server
@@ -213,44 +233,54 @@ MCP_CONFIG=./test-config.json mcp tools list test-server
 - `mcp inspect <name>` - Get capabilities summary
 
 ### Tool Operations
+
 - `mcp tools list <server> [--names-only] [--brief] [--full]` - List tools
 - `mcp tools schema <server> <tool...>` - Get tool schema(s)
 - `mcp tools exec <server> <tool> --args <json>` - Execute tool
+- `mcp tools batch <server> --operations <json> [--transactional]` - Execute multiple tools sequentially
 - `mcp tools search <server> <query>` - Search tools
 
 ### Resource Operations
+
 - `mcp resources list <server> [--names-only]` - List resources
 - `mcp resources read <server> <uri>` - Read resource
 - `mcp resources schema <server> <uri>` - Get resource metadata
 - `mcp resources search <server> <pattern>` - Search resources
 
 ### Prompt Operations
+
 - `mcp prompts list <server> [--names-only]` - List prompts
 - `mcp prompts schema <server> <prompt>` - Get prompt schema
 - `mcp prompts get <server> <prompt> [--args <json>]` - Get prompt
 
 ### Discovery
+
+- `mcp discover [query]` - **Unified discovery** - List servers OR search with intelligent recommendations
 - `mcp search <query> [--detailed]` - Search across all servers
 - `mcp recommend <task-description>` - Get tool recommendations
 
 ## Usage with AI Assistants
 
 ### Claude (via bash_tool)
+
 ```python
-# Step 1: Discover servers
+# Recommended: Use discover command for intelligent tool finding
+discovery = bash_tool('mcp discover "read and write files"')
+# Returns: servers, matches, suggested_batch
+
+# Option 1: Execute suggested batch (if available)
+if discovery.suggested_batch:
+    result = bash_tool(f'mcp tools batch {server} --operations \'{operations}\'')
+
+# Option 2: Step-by-step discovery
 servers = bash_tool('mcp servers list --names-only')
-
-# Step 2: Find relevant tools
 tools = bash_tool('mcp tools list filesystem --names-only')
-
-# Step 3: Load schema for specific tool
 schema = bash_tool('mcp tools schema filesystem read_file')
-
-# Step 4: Execute
 result = bash_tool('mcp tools exec filesystem read_file --args \'{"path": "file.txt"}\'')
 ```
 
 ### ChatGPT (Code Interpreter)
+
 ```python
 import subprocess
 import json
@@ -264,12 +294,13 @@ servers = json.loads(result.stdout)
 ```
 
 ### Custom Agents
+
 ```javascript
-const { exec } = require('child_process');
-const { promisify } = require('util');
+const { exec } = require("child_process");
+const { promisify } = require("util");
 const execAsync = promisify(exec);
 
-const { stdout } = await execAsync('mcp servers list --names-only');
+const { stdout } = await execAsync("mcp servers list --names-only");
 const result = JSON.parse(stdout);
 ```
 
@@ -278,6 +309,7 @@ const result = JSON.parse(stdout);
 All commands output JSON:
 
 **Success**:
+
 ```json
 {
   "success": true,
@@ -293,6 +325,7 @@ All commands output JSON:
 ```
 
 **Error**:
+
 ```json
 {
   "success": false,
@@ -341,6 +374,7 @@ src/
 ```
 
 Key design decisions:
+
 - **Minimal by default**: All list operations default to `--names-only`
 - **Explicit schema loading**: Use `schema` command when needed
 - **JSON-only output**: stdout is reserved for JSON, logs go to stderr
@@ -351,10 +385,10 @@ Key design decisions:
 
 **Scenario**: Multi-step development task across 6 tools from 3 servers
 
-| Approach | Tokens Loaded | Tokens Used | Waste | Quality |
-|----------|--------------|-------------|-------|---------|
-| **Eager Loading** | 18,000 | 1,650 | 83% | Degraded |
-| **MCP CLI** | 1,650 | 1,650 | 0% | Optimal |
+| Approach          | Tokens Loaded | Tokens Used | Waste | Quality  |
+| ----------------- | ------------- | ----------- | ----- | -------- |
+| **Eager Loading** | 18,000        | 1,650       | 83%   | Degraded |
+| **MCP CLI**       | 1,650         | 1,650       | 0%    | Optimal  |
 
 **Savings**: 91% reduction in tool-related context pollution
 
@@ -366,12 +400,25 @@ Contributions welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guide
 
 MIT License - see [LICENSE](./LICENSE) for details.
 
-## Resources
+## Documentation
+
+### Guides
+
+- **[Agent Integration Guide](./docs/AGENT_INTEGRATION.md)** - Complete guide for AI agents to integrate with MCP CLI
+- **[Workflows Guide](./docs/WORKFLOWS.md)** - Multi-step workflow patterns and examples
+- **[API Reference](./docs/API_REFERENCE.md)** - Comprehensive command reference with examples
+
+### Examples
+
+- **[Agent Examples](./examples/agents/)** - TypeScript, Python, and Bash agent implementations
+- **[Workflow Examples](./examples/workflows/)** - Practical multi-step workflow scripts
+
+### Resources
 
 - [MCP Specification](https://modelcontextprotocol.io)
 - [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
-- [Documentation](./docs/)
-- [Examples](./docs/examples/)
+- [Implementation Summary](./docs/IMPLEMENTATION_SUMMARY.md)
+- [MCP CLI Bridge Spec](./docs/mcp-cli-bridge-spec.md)
 
 ## Support
 

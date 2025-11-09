@@ -2,12 +2,12 @@ import { assertEquals, assertExists, assertRejects } from "@std/assert";
 import { HTTPMCPClient } from "../../../src/client/http.ts";
 import type { HTTPServerConfig } from "../../../src/types/config.ts";
 import {
-  createTextToolResult,
-  createResourceContents,
   createPromptResult,
-  SAMPLE_TOOLS,
-  SAMPLE_RESOURCES,
+  createResourceContents,
+  createTextToolResult,
   SAMPLE_PROMPTS,
+  SAMPLE_RESOURCES,
+  SAMPLE_TOOLS,
 } from "../../fixtures/test-data.ts";
 
 // Store original fetch
@@ -23,8 +23,15 @@ function setupMockFetch() {
   mockError = null;
   mockHttpStatus = null;
 
-  globalThis.fetch = async (input: string | Request | URL, _init?: RequestInit): Promise<Response> => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+  globalThis.fetch = async (
+    input: string | Request | URL,
+    _init?: RequestInit,
+  ): Promise<Response> => {
+    const url = typeof input === "string"
+      ? input
+      : input instanceof URL
+      ? input.toString()
+      : input.url;
 
     if (mockError) {
       throw mockError;

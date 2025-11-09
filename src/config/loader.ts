@@ -38,7 +38,7 @@ export class ConfigLoader {
     const exists = await Platform.fileExists(configPath);
     if (!exists) {
       logger.info("Configuration file not found, using empty config", {
-        path: configPath
+        path: configPath,
       });
       this.config = { servers: {} };
       return this.config;

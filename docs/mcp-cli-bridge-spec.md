@@ -1,11 +1,11 @@
 # MCP CLI Bridge - Technical Specification
 
-**Package Name:** `@cosmic/mcp-cli`  
-**Version:** 1.0  
-**Date:** November 8, 2025  
-**Author:** Commander  
-**Status:** Design Phase  
-**Runtime:** Deno (with Node.js compatibility)  
+**Package Name:** `@cosmic/mcp-cli`\
+**Version:** 1.0\
+**Date:** November 8, 2025\
+**Author:** Commander\
+**Status:** Design Phase\
+**Runtime:** Deno (with Node.js compatibility)\
 **Registry:** JSR (jsr.io/@cosmic/mcp-cli)
 
 ## Executive Summary
@@ -75,7 +75,7 @@ This isn't just an optimization—it's **how LLM tool systems should be architec
 
 This approach works with any AI assistant that can execute shell commands:
 
-- **Claude:** via `bash_tool` 
+- **Claude:** via `bash_tool`
 - **ChatGPT:** via Code Interpreter / Advanced Data Analysis
 - **GitHub Copilot:** via terminal integration
 - **Custom Agents:** via subprocess/shell execution
@@ -95,11 +95,12 @@ Loading all MCP tools directly into an LLM's context creates significant cogniti
 - **Hallucination Risk:** Similar tool names across servers increase confusion
 - **Inefficiency:** "Attention sinks" help but don't eliminate the fundamental problem
 
-Even with models advertising 200K+ token context windows, having irrelevant tool descriptions loaded reduces reasoning quality. The attention mechanism can't truly pay *zero* attention to something in context.
+Even with models advertising 200K+ token context windows, having irrelevant tool descriptions loaded reduces reasoning quality. The attention mechanism can't truly pay _zero_ attention to something in context.
 
 **Secondary Issue: Platform & Enterprise Restrictions**
 
 Different AI platforms may have varying levels of MCP support:
+
 - Enterprise deployments may restrict direct MCP protocol access
 - Some platforms don't support MCP natively
 - Network configuration and security policies vary
@@ -119,6 +120,7 @@ Instead of loading all tools upfront (eager loading), implement a lazy loading p
 **Implementation: CLI Bridge**
 
 Build a cross-platform CLI tool that:
+
 - Acts as an MCP client on behalf of any AI assistant
 - Enables progressive disclosure through targeted queries
 - Exposes MCP capabilities through simple shell commands
@@ -176,6 +178,7 @@ Build a cross-platform CLI tool that:
 ### 2.2 Component Breakdown
 
 #### 2.2.1 CLI Interface Layer
+
 - Command parser (platform-agnostic)
 - Input validation
 - Output formatting (JSON)
@@ -183,18 +186,21 @@ Build a cross-platform CLI tool that:
 - Cross-platform path handling
 
 #### 2.2.2 MCP Protocol Layer
+
 - MCP client implementation
 - Connection management
 - Transport abstraction (stdio, SSE, HTTP)
 - Protocol message handling
 
 #### 2.2.3 Server Registry
+
 - Configuration management
 - Server discovery
 - Connection pooling
 - Health checking
 
 #### 2.2.4 Execution Layer
+
 - Tool invocation
 - Resource fetching
 - Prompt management
@@ -224,6 +230,7 @@ Attention Overhead: Constant evaluation of 125 irrelevant tools
 ```
 
 When user asks: "Read the README file"
+
 - Only needs: `filesystem.read_file` (~200 tokens)
 - Gets loaded: All 125 tools (~35,000 tokens)
 - Wasted: ~34,800 tokens of context pollution
@@ -361,14 +368,16 @@ if context_getting_full():
 "Set up a new project: create a repo, scaffold files, set up CI, create initial issues"
 
 **Eager Loading:**
+
 - Preload: github (28 tools), filesystem (12 tools), CI server (20 tools)
 - Context cost: ~18,000 tokens before starting
 - Actually used: 6 tools total
 - Waste: ~15,000 tokens (83%)
 
 **Lazy Loading:**
+
 - Turn 1: Load github.create_repo (~300 tokens)
-- Turn 2: Load filesystem.write_file (~200 tokens)  
+- Turn 2: Load filesystem.write_file (~200 tokens)
 - Turn 3: Load filesystem.create_directory (~200 tokens)
 - Turn 4: Load ci.create_workflow (~400 tokens)
 - Turn 5: Load github.create_issue (~300 tokens)
@@ -401,6 +410,7 @@ if context_getting_full():
 ### 4.2 Why Deno?
 
 **Advantages over Node.js:**
+
 - **Built-in TypeScript:** No build step required
 - **Better Security:** Explicit permissions for file/network access
 - **Modern stdlib:** Comprehensive standard library
@@ -410,6 +420,7 @@ if context_getting_full():
 - **No node_modules:** Cleaner dependency management
 
 **Node Compatibility:**
+
 - Use Deno's node: imports for compatibility
 - Test against both Deno and Node runtimes
 - Ensure all dependencies work in both environments
@@ -439,6 +450,7 @@ if context_getting_full():
 ```
 
 **Key Packages:**
+
 - **@cliffy/command:** Modern CLI framework for Deno (replaces Commander.js)
 - **@modelcontextprotocol/sdk:** Official MCP TypeScript SDK (via npm:)
 - **@std/*:** Deno standard library modules
@@ -455,22 +467,26 @@ if context_getting_full():
 ### 4.5 Cross-Platform Considerations
 
 **Windows:**
+
 - Handle both forward and backslashes in paths
 - Support cmd.exe, PowerShell, and Git Bash
 - Use Windows-specific environment variables when needed
 - Test with Windows Defender and enterprise antivirus
 
 **macOS:**
+
 - Code signing for distribution (optional, for trusted binaries)
 - Handle case-sensitive filesystem differences
 - Support both Intel and Apple Silicon (arm64)
 
 **Linux:**
+
 - Support various distributions (Ubuntu, Fedora, Alpine)
 - Handle different shell environments (bash, zsh, fish)
 - Respect XDG base directory specification for config
 
 **Path Handling:**
+
 - Use `@std/path` for all path operations
 - Always normalize paths before use
 - Support both absolute and relative paths
@@ -642,6 +658,7 @@ mcp-cli batch exec --file operations.json
 All commands output JSON for easy parsing:
 
 **Success (Minimal):**
+
 ```json
 {
   "success": true,
@@ -652,6 +669,7 @@ All commands output JSON for easy parsing:
 ```
 
 **Success (Full) - with metadata:**
+
 ```json
 {
   "success": true,
@@ -662,12 +680,13 @@ All commands output JSON for easy parsing:
     "server": "server-name",
     "timestamp": "2025-11-08T12:00:00Z",
     "executionTime": 145,
-    "tokensEstimate": 250  // Estimate of tokens in response
+    "tokensEstimate": 250 // Estimate of tokens in response
   }
 }
 ```
 
 **Error format:**
+
 ```json
 {
   "success": false,
@@ -709,6 +728,7 @@ mcp-cli tools exec filesystem read_file --args '{"path": "large.txt"}' --max-tok
 ### 5.4 Configuration File
 
 **Location (Cross-Platform):**
+
 - **Windows:** `%USERPROFILE%\.mcp-cli\config.json`
 - **macOS/Linux:** `~/.mcp-cli/config.json`
 - **XDG (Linux):** `$XDG_CONFIG_HOME/mcp-cli/config.json`
@@ -728,7 +748,7 @@ mcp-cli tools exec filesystem read_file --args '{"path": "large.txt"}' --max-tok
     "github": {
       "type": "sse",
       "url": "http://localhost:3000/sse",
-      "apiKey": "${GITHUB_TOKEN}",  // Environment variable substitution
+      "apiKey": "${GITHUB_TOKEN}", // Environment variable substitution
       "enabled": true
     },
     "slack": {
@@ -745,12 +765,13 @@ mcp-cli tools exec filesystem read_file --args '{"path": "large.txt"}' --max-tok
     "maxRetries": 3,
     "logLevel": "info",
     "cacheSchemas": true,
-    "cacheTTL": 300  // 5 minutes
+    "cacheTTL": 300 // 5 minutes
   }
 }
 ```
 
 **Environment Variable Substitution:**
+
 - Supports `${VAR_NAME}` syntax
 - Falls back to empty string if not set (with warning)
 - Validated at runtime, not config load time
@@ -830,11 +851,11 @@ interface MCPClientAdapter {
 class MCPClientFactory {
   static create(config: ServerConfig): MCPClientAdapter {
     switch (config.type) {
-      case 'stdio':
+      case "stdio":
         return new StdioMCPClient(config);
-      case 'sse':
+      case "sse":
         return new SSEMCPClient(config);
-      case 'http':
+      case "http":
         return new HTTPMCPClient(config);
       default:
         throw new Error(`Unsupported transport: ${config.type}`);
@@ -852,7 +873,7 @@ import { Command } from "@cliffy/command";
 export const toolsCommand = new Command()
   .name("tools")
   .description("Manage and execute tools from MCP servers")
-  .action(function() {
+  .action(function () {
     this.showHelp();
   })
   .command("list", "List available tools")
@@ -879,23 +900,23 @@ import { join, normalize } from "@std/path";
 
 export class Platform {
   static getConfigDir(): string {
-    const home = Deno.env.get("HOME") || 
-                 Deno.env.get("USERPROFILE") || 
-                 "";
-    
+    const home = Deno.env.get("HOME") ||
+      Deno.env.get("USERPROFILE") ||
+      "";
+
     if (Deno.build.os === "windows") {
       return join(home, ".mcp-cli");
     }
-    
+
     // Respect XDG on Linux
     const xdgConfig = Deno.env.get("XDG_CONFIG_HOME");
     if (xdgConfig && Deno.build.os === "linux") {
       return join(xdgConfig, "mcp-cli");
     }
-    
+
     return join(home, ".mcp-cli");
   }
-  
+
   static getConfigPath(): string {
     return join(this.getConfigDir(), "config.json");
   }
@@ -917,12 +938,12 @@ enum LogLevel {
   WARN = 1,
   INFO = 2,
   DEBUG = 3,
-  TRACE = 4
+  TRACE = 4,
 }
 
 // Logs to stderr to avoid polluting stdout (JSON output)
-logger.info('Connected to MCP server', { server: 'filesystem' });
-logger.error('Failed to execute tool', { tool: 'read_file', error });
+logger.info("Connected to MCP server", { server: "filesystem" });
+logger.error("Failed to execute tool", { tool: "read_file", error });
 ```
 
 ## 6. Security Considerations
@@ -1049,12 +1070,14 @@ deno compile --allow-all --target x86_64-pc-windows-msvc --output bin/mcp.exe sr
 ```
 
 **Binary Naming Convention:**
+
 - Linux: `mcp-linux-x64`
 - macOS Intel: `mcp-macos-x64`
 - macOS Apple Silicon: `mcp-macos-arm64`
 - Windows: `mcp-windows-x64.exe`
 
 **Distribution Channels:**
+
 - GitHub Releases (with binaries attached)
 - Homebrew tap (macOS/Linux): `brew install cosmic/tap/mcp-cli`
 - Chocolatey (Windows): `choco install mcp-cli`
@@ -1106,7 +1129,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build:
@@ -1116,18 +1139,18 @@ jobs:
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v2.x
-      
+
       # Publish to JSR
       - name: Publish to JSR
         run: deno publish
         env:
           JSR_TOKEN: ${{ secrets.JSR_TOKEN }}
-      
+
       # Build standalone binaries
       - name: Build binaries
         run: |
           deno task compile
-      
+
       # Create GitHub release
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -1138,6 +1161,7 @@ jobs:
 ### 8.5 Version Management
 
 **Semantic Versioning:**
+
 - `1.0.0` - Initial stable release
 - `1.1.0` - New features (backward compatible)
 - `1.0.1` - Bug fixes
@@ -1148,7 +1172,7 @@ jobs:
 ```jsonc
 {
   "name": "@cosmic/mcp-cli",
-  "version": "1.0.0",  // Updated for each release
+  "version": "1.0.0" // Updated for each release
   // ...
 }
 ```
@@ -1203,34 +1227,36 @@ chmod +x ~/.local/bin/mcp
 // User: "Read the README file and create a GitHub issue if there are TODOs"
 
 // Step 1: Discovery - what servers are available? (minimal context)
-const servers = await shell_exec('mcp servers list --names-only');
+const servers = await shell_exec("mcp servers list --names-only");
 // Result: ["filesystem", "github", "slack", "jira"]
 // Context cost: ~50 tokens
 
 // Step 2: Check filesystem capabilities (still minimal)
-const fsTools = await shell_exec('mcp tools list filesystem --names-only');
+const fsTools = await shell_exec("mcp tools list filesystem --names-only");
 // Result: ["read_file", "write_file", "list_directory", "search_files"]
 // Context cost: ~100 tokens
 
 // Step 3: Load ONLY the schema we need
-const readSchema = await shell_exec('mcp tools schema filesystem read_file');
+const readSchema = await shell_exec("mcp tools schema filesystem read_file");
 // Result: Full JSON schema for read_file
 // Context cost: ~200 tokens
 
 // Step 4: Execute
-const readme = await shell_exec(`mcp tools exec filesystem read_file --args '{"path": "README.md"}'`);
+const readme = await shell_exec(
+  `mcp tools exec filesystem read_file --args '{"path": "README.md"}'`,
+);
 // Got the content, now check for TODOs...
 
 // Step 5: If TODOs found, discover GitHub tools
 if (hasTodos(readme)) {
-  const githubTools = await shell_exec('mcp tools list github --names-only');
+  const githubTools = await shell_exec("mcp tools list github --names-only");
   // Result: ["create_issue", "get_issue", "list_issues", ...]
   // Context cost: ~150 tokens
-  
+
   // Step 6: Load create_issue schema
-  const createIssueSchema = await shell_exec('mcp tools schema github create_issue');
+  const createIssueSchema = await shell_exec("mcp tools schema github create_issue");
   // Context cost: ~300 tokens
-  
+
   // Step 7: Create the issue
   await shell_exec(`mcp tools exec github create_issue --args '${JSON.stringify(issueData)}'`);
 }
@@ -1273,12 +1299,12 @@ const search = await bash_tool('mcp-cli search "CI pipeline logs build status"')
 // Context cost: ~300 tokens
 
 // Step 2: Inspect the most relevant server
-const ciInfo = await bash_tool('mcp-cli inspect ci-server');
+const ciInfo = await bash_tool("mcp-cli inspect ci-server");
 // Result: { "tools": 15, "resources": 3, "capabilities": ["streaming", "webhooks"] }
 // Context cost: ~100 tokens
 
 // Step 3: Get brief descriptions to choose the right tool
-const ciTools = await bash_tool('mcp-cli tools list ci-server --brief');
+const ciTools = await bash_tool("mcp-cli tools list ci-server --brief");
 // Result: [
 //   {"name": "get_build_logs", "description": "Retrieve logs for a specific build"},
 //   {"name": "get_build_status", "description": "Get current status of a build"},
@@ -1287,12 +1313,16 @@ const ciTools = await bash_tool('mcp-cli tools list ci-server --brief');
 // Context cost: ~500 tokens
 
 // Step 4: Load schemas for the 2-3 tools we'll actually use
-const schemas = await bash_tool('mcp-cli tools schema ci-server get_build_logs get_build_status');
+const schemas = await bash_tool("mcp-cli tools schema ci-server get_build_logs get_build_status");
 // Context cost: ~600 tokens
 
 // Step 5: Execute
-const status = await bash_tool(`mcp-cli tools exec ci-server get_build_status --args '{"build_id": "123"}'`);
-const logs = await bash_tool(`mcp-cli tools exec ci-server get_build_logs --args '{"build_id": "123"}'`);
+const status = await bash_tool(
+  `mcp-cli tools exec ci-server get_build_status --args '{"build_id": "123"}'`,
+);
+const logs = await bash_tool(
+  `mcp-cli tools exec ci-server get_build_logs --args '{"build_id": "123"}'`,
+);
 
 // Total: ~1,500 tokens vs loading all CI + GitHub + Slack tools (~15,000 tokens)
 ```
@@ -1309,31 +1339,31 @@ const batchOps = {
       server: "github",
       tool: "create_branch",
       args: { branch: "feature/new-feature", from: "main" },
-      output_var: "branch_ref"
+      output_var: "branch_ref",
     },
     {
       server: "filesystem",
       tool: "create_directory",
-      args: { path: "src/features/new-feature" }
+      args: { path: "src/features/new-feature" },
     },
     {
       server: "filesystem",
       tool: "write_file",
       args: {
         path: "src/features/new-feature/index.ts",
-        content: "// TODO: Implement feature"
-      }
+        content: "// TODO: Implement feature",
+      },
     },
     {
       server: "github",
       tool: "create_pull_request",
       args: {
         title: "Add new feature",
-        head: "{{branch_ref}}",  // Reference from operation 1
-        base: "main"
-      }
-    }
-  ]
+        head: "{{branch_ref}}", // Reference from operation 1
+        base: "main",
+      },
+    },
+  ],
 };
 
 // Step 2: Execute batch (CLI loads schemas internally, doesn't pollute AI's context)
@@ -1349,11 +1379,11 @@ const result = await shell_exec(`mcp batch exec --file ${JSON.stringify(batchOps
 // User: "What can you help me with?"
 
 // Show available servers without overwhelming with details
-const servers = await shell_exec('mcp servers list --names-only');
+const servers = await shell_exec("mcp servers list --names-only");
 // Result: ["filesystem", "github", "slack", "jira", "database"]
 
 // Let user pick, then show high-level capabilities
-const inspect = await shell_exec('mcp inspect github');
+const inspect = await shell_exec("mcp inspect github");
 // Result: {
 //   "tools": 28,
 //   "resources": 5,
@@ -1366,7 +1396,7 @@ const issueTools = await shell_exec('mcp tools search github "issue"');
 // Result: ["create_issue", "get_issue", "update_issue", "list_issues", "add_labels"]
 
 // User: "Show me how to create an issue"
-const schema = await shell_exec('mcp tools schema github create_issue');
+const schema = await shell_exec("mcp tools schema github create_issue");
 // NOW load the full schema
 
 // Progressive disclosure: went from 28 tools (~8,400 tokens) to 1 tool (~300 tokens)
@@ -1378,17 +1408,19 @@ const schema = await shell_exec('mcp tools schema github create_issue');
 // AI can build up a "working set" of tools across a conversation
 
 // Turn 1: "List files in the project"
-const listSchema = await shell_exec('mcp tools schema filesystem list_directory');
+const listSchema = await shell_exec("mcp tools schema filesystem list_directory");
 const files = await shell_exec(`mcp tools exec filesystem list_directory --args '{"path": "."}'`);
 // Context now has: list_directory schema
 
 // Turn 2: "Read the package.json"
-const readSchema = await shell_exec('mcp tools schema filesystem read_file');
-const pkg = await shell_exec(`mcp tools exec filesystem read_file --args '{"path": "package.json"}'`);
+const readSchema = await shell_exec("mcp tools schema filesystem read_file");
+const pkg = await shell_exec(
+  `mcp tools exec filesystem read_file --args '{"path": "package.json"}'`,
+);
 // Context now has: list_directory + read_file schemas (2 tools, ~400 tokens)
 
 // Turn 3: "Check if there's a CI workflow for this"
-const ghSchema = await shell_exec('mcp tools schema github list_workflow_runs');
+const ghSchema = await shell_exec("mcp tools schema github list_workflow_runs");
 const workflows = await shell_exec(`mcp tools exec github list_workflow_runs --args {...}`);
 // Context now has: 3 tool schemas (~700 tokens)
 
@@ -1422,11 +1454,13 @@ const availableTools = await shell_exec('mcp tools list filesystem --names-only'
 ### 9.7 Multi-Platform Usage
 
 **Claude (via bash_tool):**
+
 ```python
 result = bash_tool(command='mcp servers list --names-only')
 ```
 
 **ChatGPT (Code Interpreter):**
+
 ```python
 import subprocess
 import json
@@ -1440,16 +1474,18 @@ servers = json.loads(result.stdout)['data']
 ```
 
 **GitHub Copilot Agent:**
+
 ```javascript
-const { exec } = require('child_process');
-const { promisify } = require('util');
+const { exec } = require("child_process");
+const { promisify } = require("util");
 const execAsync = promisify(exec);
 
-const { stdout } = await execAsync('mcp servers list --names-only');
+const { stdout } = await execAsync("mcp servers list --names-only");
 const result = JSON.parse(stdout);
 ```
 
 **Custom Python Agent:**
+
 ```python
 import subprocess
 import json
@@ -1470,6 +1506,7 @@ tools = mcp_exec('tools list filesystem --names-only')
 ## 10. Development Roadmap
 
 ### Phase 1: MVP - Progressive Disclosure Core (Week 1-2)
+
 **Focus: Minimal context overhead from day one**
 
 - [ ] Basic CLI structure with Commander.js
@@ -1484,15 +1521,17 @@ tools = mcp_exec('tools list filesystem --names-only')
 - [ ] Basic error handling with suggestions
 
 **Success Criteria:**
+
 - Can discover and execute tools with < 1,000 tokens overhead
 - All list operations default to names-only
 - Schema loading is explicit and targeted
 
 ### Phase 2: Discovery & Search (Week 3)
+
 **Focus: Intelligent tool discovery without context pollution**
 
 - [ ] SSE transport implementation
-- [ ] HTTP transport implementation  
+- [ ] HTTP transport implementation
 - [ ] **Advanced discovery commands:**
   - [ ] `search <query>` - cross-server search
   - [ ] `inspect <server>` - high-level capabilities
@@ -1502,11 +1541,13 @@ tools = mcp_exec('tools list filesystem --names-only')
 - [ ] Response size management (pagination, truncation)
 
 **Success Criteria:**
+
 - Can explore 100+ tools while loading < 5 schemas
 - Search results ranked by relevance
 - Brief mode provides enough info to choose tools
 
 ### Phase 3: Workflow Optimization (Week 4)
+
 **Focus: Support complex multi-tool workflows efficiently**
 
 - [ ] **Batch operations:**
@@ -1518,11 +1559,13 @@ tools = mcp_exec('tools list filesystem --names-only')
 - [ ] Comprehensive error handling with recovery suggestions
 
 **Success Criteria:**
+
 - 5-step workflows use < 3,000 tokens in schemas
 - Batch operations don't leak schemas to Claude's context
 - Cache reduces redundant schema loads by 70%+
 
 ### Phase 4: Polish & Documentation (Week 5)
+
 **Focus: Production readiness**
 
 - [ ] Unit and integration tests (80%+ coverage)
@@ -1535,11 +1578,13 @@ tools = mcp_exec('tools list filesystem --names-only')
 - [ ] NPM package publishing
 
 **Success Criteria:**
+
 - All tests passing
 - Documentation shows clear before/after token counts
 - Security audit complete
 
 ### Phase 5: Advanced Features (Future)
+
 **Focus: Enhanced capabilities without sacrificing context efficiency**
 
 - [ ] Interactive mode (with explicit schema loading)
@@ -1593,13 +1638,13 @@ tools = mcp_exec('tools list filesystem --names-only')
 
 ## 12. Risks & Mitigations
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| MCP protocol changes | High | Medium | Follow official SDK updates, version pinning |
-| Enterprise firewall blocks | High | Medium | Document network requirements, provide workarounds |
-| Performance issues with many servers | Medium | Low | Implement connection pooling, lazy loading |
-| Security vulnerabilities | High | Low | Regular security audits, input validation |
-| Compatibility issues across platforms | Medium | Medium | Extensive cross-platform testing |
+| Risk                                  | Impact | Probability | Mitigation                                         |
+| ------------------------------------- | ------ | ----------- | -------------------------------------------------- |
+| MCP protocol changes                  | High   | Medium      | Follow official SDK updates, version pinning       |
+| Enterprise firewall blocks            | High   | Medium      | Document network requirements, provide workarounds |
+| Performance issues with many servers  | Medium | Low         | Implement connection pooling, lazy loading         |
+| Security vulnerabilities              | High   | Low         | Regular security audits, input validation          |
+| Compatibility issues across platforms | Medium | Medium      | Extensive cross-platform testing                   |
 
 ## 13. Open Questions
 
@@ -1657,14 +1702,17 @@ tools = mcp_exec('tools list filesystem --names-only')
 ### 14.1 Alternative Approaches
 
 #### Approach A: Direct MCP Integration (Eager Loading)
+
 **How it works:** Load all tool definitions into LLM's native tool system
 
 **Pros:**
+
 - Native integration, no shell execution needed
 - Faster execution (no subprocess calls)
 - Better type safety and validation
 
 **Cons:**
+
 - ❌ **Critical flaw:** 35,000+ tokens of context pollution for large tool sets
 - ❌ Attention mechanism degradation
 - ❌ All-or-nothing: can't partially load tools
@@ -1673,14 +1721,17 @@ tools = mcp_exec('tools list filesystem --names-only')
 **Verdict:** Works for small tool sets (< 10 tools), **fails at scale**
 
 #### Approach B: MCP Proxy Server (Server-Side Filtering)
+
 **How it works:** Build a proxy that filters MCP tools before exposing to LLM
 
 **Pros:**
+
 - Can implement smart filtering logic
 - Centralized control over what's exposed
 - Reduces tokens sent to LLM
 
 **Cons:**
+
 - ❌ Still eager loading (proxy decides what to load, not LLM)
 - ❌ Requires deploying and maintaining a server
 - ❌ Static filtering rules don't adapt to dynamic task needs
@@ -1689,9 +1740,11 @@ tools = mcp_exec('tools list filesystem --names-only')
 **Verdict:** Better than direct integration, but **still pollutes context with proxy's guess** at relevant tools
 
 #### Approach C: MCP CLI Bridge (Lazy Loading) ✅
+
 **How it works:** LLM discovers and loads tools on-demand via shell execution
 
 **Pros:**
+
 - ✅ **99% reduction in context pollution**
 - ✅ LLM controls what's in context (true just-in-time loading)
 - ✅ Scales to hundreds of tools effortlessly
@@ -1700,6 +1753,7 @@ tools = mcp_exec('tools list filesystem --names-only')
 - ✅ Adapts to task requirements dynamically
 
 **Cons:**
+
 - Requires shell execution capability (which most platforms have)
 - Need to parse JSON responses
 - Not quite as "native" feeling
@@ -1711,13 +1765,13 @@ tools = mcp_exec('tools list filesystem --names-only')
 
 **Scenario:** 5 MCP servers, 100 total tools, user asks to "read a file"
 
-| Approach | Tokens Loaded | Tokens Used | Waste | Reasoning Quality |
-|----------|--------------|-------------|-------|-------------------|
-| Direct MCP (Eager) | 30,000 | 200 | 99.3% | Degraded |
-| MCP Proxy (Filtered) | 5,000* | 200 | 96% | Somewhat degraded |
-| CLI Bridge (Lazy) | 350 | 200 | 42%** | Optimal |
+| Approach             | Tokens Loaded | Tokens Used | Waste | Reasoning Quality |
+| -------------------- | ------------- | ----------- | ----- | ----------------- |
+| Direct MCP (Eager)   | 30,000        | 200         | 99.3% | Degraded          |
+| MCP Proxy (Filtered) | 5,000*        | 200         | 96%   | Somewhat degraded |
+| CLI Bridge (Lazy)    | 350           | 200         | 42%** | Optimal           |
 
-*Assumes proxy correctly guesses filesystem tools are relevant  
+*Assumes proxy correctly guesses filesystem tools are relevant\
 **Discovery overhead, but everything loaded gets used
 
 ### 14.3 Why Lazy Loading Is Correct
@@ -1725,6 +1779,7 @@ tools = mcp_exec('tools list filesystem --names-only')
 This isn't specific to MCP or any particular LLM—it's a fundamental principle:
 
 **For any LLM + tools system:**
+
 1. Context is precious (even with 200K windows)
 2. Attention is quadratic and can't be zeroed out
 3. Tool discovery should be cheap (names only)
@@ -1738,7 +1793,7 @@ The CLI bridge implements these principles correctly. Direct integration violate
 There ARE scenarios where direct MCP integration is fine:
 
 - **Small tool sets:** < 10 tools, all frequently used together
-- **Focused domains:** All tools highly relevant to narrow task scope  
+- **Focused domains:** All tools highly relevant to narrow task scope
 - **Embedded assistants:** Tools are part of the application's core function
 - **Learning/tutorials:** Showing all available capabilities upfront
 
@@ -1746,22 +1801,24 @@ But for **general-purpose AI assistants with access to enterprise tools**, lazy 
 
 ### 14.5 Platform Support Matrix
 
-| Platform | Shell Access | CLI Support | Native MCP | Best Approach |
-|----------|-------------|-------------|------------|---------------|
-| Claude | ✅ bash_tool | ✅ | ❌ | CLI Bridge |
-| ChatGPT | ✅ Code Interpreter | ✅ | ❌ | CLI Bridge |
-| GitHub Copilot | ✅ Terminal | ✅ | ❌ | CLI Bridge |
-| Custom Agents | ✅ subprocess | ✅ | Varies | CLI Bridge |
-| Embedded LLMs | Varies | Varies | Varies | Depends |
+| Platform       | Shell Access        | CLI Support | Native MCP | Best Approach |
+| -------------- | ------------------- | ----------- | ---------- | ------------- |
+| Claude         | ✅ bash_tool        | ✅          | ❌         | CLI Bridge    |
+| ChatGPT        | ✅ Code Interpreter | ✅          | ❌         | CLI Bridge    |
+| GitHub Copilot | ✅ Terminal         | ✅          | ❌         | CLI Bridge    |
+| Custom Agents  | ✅ subprocess       | ✅          | Varies     | CLI Bridge    |
+| Embedded LLMs  | Varies              | Varies      | Varies     | Depends       |
 
 ## 15. References
 
 **MCP Resources:**
+
 - [Model Context Protocol Specification](https://modelcontextprotocol.io)
 - [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
 - [MCP Servers Repository](https://github.com/modelcontextprotocol/servers)
 
 **Deno Resources:**
+
 - [Deno Documentation](https://docs.deno.com)
 - [Deno Standard Library](https://jsr.io/@std)
 - [Cliffy CLI Framework](https://cliffy.io)
@@ -1769,11 +1826,13 @@ But for **general-purpose AI assistants with access to enterprise tools**, lazy 
 - [Deno Compile Documentation](https://docs.deno.com/runtime/manual/tools/compiler)
 
 **Related Research:**
+
 - [Attention Mechanisms in Transformers](https://arxiv.org/abs/1706.03762)
 - [Long Context Windows in LLMs](https://arxiv.org/abs/2309.16039)
 - [Tool Use in Language Models](https://arxiv.org/abs/2302.04761)
 
 **Community:**
+
 - [GitHub Repository](https://github.com/cosmic/mcp-cli) (future)
 - [Discord Community](https://discord.gg/cosmic) (future)
 
@@ -1799,6 +1858,7 @@ But for **general-purpose AI assistants with access to enterprise tools**, lazy 
 10. Create platform-specific installation guides
 
 **Success Criteria Before v1.0:**
+
 - Can demonstrate 90%+ token reduction in realistic workflows
 - Command structure feels intuitive (minimal documentation needed to use)
 - Error messages guide AI assistants toward correct usage patterns
@@ -1819,7 +1879,7 @@ Makes this a reference implementation for how to properly integrate external too
 
 **Additional Resources to Create:**
 
-- Blog post: "Why Eager Loading Breaks LLM Tool Systems" 
+- Blog post: "Why Eager Loading Breaks LLM Tool Systems"
 - Case study: Token usage analysis across 10 common workflows
 - Integration guides for major AI platforms (Claude, ChatGPT, custom agents)
 - Video tutorial: "Building Context-Efficient AI Workflows"

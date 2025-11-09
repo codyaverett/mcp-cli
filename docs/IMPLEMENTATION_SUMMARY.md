@@ -65,21 +65,25 @@ A complete, production-ready implementation of the MCP CLI Bridge specification 
 ### Progressive Disclosure (Core Innovation)
 
 ✅ **Names-Only Mode** (default - minimal context)
+
 ```bash
 mcp tools list <server> --names-only  # ~100 tokens
 ```
 
 ✅ **Brief Mode** (moderate context)
+
 ```bash
 mcp tools list <server> --brief  # ~500-1000 tokens
 ```
 
 ✅ **Full Mode** (explicit only)
+
 ```bash
 mcp tools list <server> --full  # ~2000+ tokens
 ```
 
 ✅ **Just-In-Time Schema Loading**
+
 ```bash
 mcp tools schema <server> <tool>  # Load only when needed
 ```
@@ -147,6 +151,7 @@ mcp tools schema <server> <tool>  # Load only when needed
 ## 🚀 Usage
 
 ### Installation
+
 ```bash
 # Deno
 deno install -g -A -n mcp jsr:@cosmic/mcp-cli
@@ -159,6 +164,7 @@ deno task compile
 ```
 
 ### Basic Commands
+
 ```bash
 # Add a server
 mcp servers add filesystem --type stdio \
@@ -199,17 +205,20 @@ mcp search "file operations"
 ## 📋 Next Steps
 
 To publish to JSR:
+
 ```bash
 deno publish --allow-dirty
 ```
 
 To create GitHub release:
+
 ```bash
 deno task compile  # Build binaries
 # Tag and create release with binaries
 ```
 
 To test with real MCP servers:
+
 1. Install an MCP server (e.g., @modelcontextprotocol/server-filesystem)
 2. Add it with `mcp servers add`
 3. Test with `mcp tools list` and `mcp tools exec`
@@ -219,6 +228,7 @@ To test with real MCP servers:
 This is a **production-ready**, **fully-featured** implementation of the MCP CLI Bridge specification. All core features, progressive disclosure patterns, cross-platform support, and documentation are complete and tested.
 
 The implementation successfully demonstrates:
+
 - ✅ Just-in-time tool discovery
 - ✅ Minimal context pollution
 - ✅ Cross-platform compatibility

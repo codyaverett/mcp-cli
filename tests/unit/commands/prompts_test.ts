@@ -1,17 +1,9 @@
 import { assertEquals, assertExists } from "@std/assert";
-import {
-  listPrompts,
-  getPromptSchema,
-  getPrompt,
-} from "../../../src/commands/prompts.ts";
+import { getPrompt, getPromptSchema, listPrompts } from "../../../src/commands/prompts.ts";
 import { clientPool } from "../../../src/client/factory.ts";
 import { JSONFormatter } from "../../../src/utils/json.ts";
 import { MockMCPClient } from "../../fixtures/mock-client.ts";
-import {
-  SAMPLE_PROMPTS,
-  createPrompt,
-  createPromptResult,
-} from "../../fixtures/test-data.ts";
+import { createPrompt, createPromptResult, SAMPLE_PROMPTS } from "../../fixtures/test-data.ts";
 import type { StdioServerConfig } from "../../../src/types/config.ts";
 
 // Store original functions

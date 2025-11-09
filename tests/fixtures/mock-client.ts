@@ -1,6 +1,4 @@
-import type {
-  MCPClientAdapter,
-} from "../../src/client/base.ts";
+import type { MCPClientAdapter } from "../../src/client/base.ts";
 import type {
   Prompt,
   PromptResult,

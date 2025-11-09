@@ -29,7 +29,7 @@ export { BaseMCPClient } from "./client/base.ts";
 export { StdioMCPClient } from "./client/stdio.ts";
 export { SSEMCPClient } from "./client/sse.ts";
 export { HTTPMCPClient } from "./client/http.ts";
-export { MCPClientFactory, MCPClientPool, clientPool } from "./client/factory.ts";
+export { clientPool, MCPClientFactory, MCPClientPool } from "./client/factory.ts";
 
 // Export utilities
 export { Platform } from "./utils/platform.ts";

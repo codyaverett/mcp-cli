@@ -4,7 +4,7 @@ import { JSONFormatter } from "../utils/json.ts";
 import { logger } from "../utils/logger.ts";
 import { Errors } from "../utils/errors.ts";
 import type { BriefTool } from "../types/mcp.ts";
-import type { ToolExecOptions, ToolListOptions, BatchExecOptions } from "../types/commands.ts";
+import type { BatchExecOptions, ToolExecOptions, ToolListOptions } from "../types/commands.ts";
 
 /**
  * Helper to show available servers when server argument is missing
@@ -17,7 +17,8 @@ async function showAvailableServers(): Promise<void> {
     const error = Errors.validationError(
       "No server specified",
     );
-    error.suggestion = "No servers configured. Run 'mcp servers init' then 'mcp servers add <name> --type stdio --command <cmd>' to add your first server";
+    error.suggestion =
+      "No servers configured. Run 'mcp servers init' then 'mcp servers add <name> --type stdio --command <cmd>' to add your first server";
     JSONFormatter.output(error.toJSON());
     Deno.exit(1);
   }
@@ -33,7 +34,10 @@ async function showAvailableServers(): Promise<void> {
 /**
  * List tools from a server with progressive disclosure support
  */
-export async function listTools(serverName: string | undefined, options: ToolListOptions): Promise<void> {
+export async function listTools(
+  serverName: string | undefined,
+  options: ToolListOptions,
+): Promise<void> {
   if (!serverName) {
     await showAvailableServers();
     return;
@@ -284,7 +288,9 @@ export async function executeBatch(options: BatchExecOptions): Promise<void> {
     const error = Errors.validationError(
       "All operations in a batch must use the same server",
     );
-    error.suggestion = `Found multiple servers: ${Array.from(servers).join(", ")}. Use separate batch commands for different servers.`;
+    error.suggestion = `Found multiple servers: ${
+      Array.from(servers).join(", ")
+    }. Use separate batch commands for different servers.`;
     JSONFormatter.output(error.toJSON());
     Deno.exit(1);
     return;
@@ -337,7 +343,9 @@ export async function executeBatch(options: BatchExecOptions): Promise<void> {
         // If transactional mode is enabled, fail the entire batch
         if (options.transactional) {
           const mcpError = Errors.wrap(error);
-          mcpError.message = `Batch execution failed at operation ${results.length + 1} (${operation.tool}): ${mcpError.message}`;
+          mcpError.message = `Batch execution failed at operation ${
+            results.length + 1
+          } (${operation.tool}): ${mcpError.message}`;
           JSONFormatter.output(mcpError.toJSON());
           Deno.exit(1);
           return;
@@ -361,8 +369,12 @@ export async function executeBatch(options: BatchExecOptions): Promise<void> {
         operations: results,
         summary: {
           total: options.operations.length,
-          succeeded: results.filter((r) => !(r.result && typeof r.result === "object" && "error" in r.result)).length,
-          failed: results.filter((r) => r.result && typeof r.result === "object" && "error" in r.result).length,
+          succeeded: results.filter((r) =>
+            !(r.result && typeof r.result === "object" && "error" in r.result)
+          ).length,
+          failed: results.filter((r) =>
+            r.result && typeof r.result === "object" && "error" in r.result
+          ).length,
         },
       },
       {

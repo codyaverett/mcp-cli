@@ -1,11 +1,11 @@
-import { assertEquals, assertExists, assert } from "@std/assert";
-import {
-  serverConfigSchema,
-  preferencesSchema,
-  configSchema,
-} from "../../../src/config/schema.ts";
+import { assert, assertEquals, assertExists } from "@std/assert";
+import { configSchema, preferencesSchema, serverConfigSchema } from "../../../src/config/schema.ts";
 import { LogLevel } from "../../../src/types/config.ts";
-import type { StdioServerConfig, SSEServerConfig, HTTPServerConfig } from "../../../src/types/config.ts";
+import type {
+  HTTPServerConfig,
+  SSEServerConfig,
+  StdioServerConfig,
+} from "../../../src/types/config.ts";
 import { assertThrows } from "../../fixtures/test-utils.ts";
 
 // Stdio Server Config Tests
@@ -297,7 +297,9 @@ Deno.test("schema - valid preferences with all fields", () => {
 });
 
 Deno.test("schema - valid preferences with each log level", () => {
-  for (const level of [LogLevel.ERROR, LogLevel.WARN, LogLevel.INFO, LogLevel.DEBUG, LogLevel.TRACE]) {
+  for (
+    const level of [LogLevel.ERROR, LogLevel.WARN, LogLevel.INFO, LogLevel.DEBUG, LogLevel.TRACE]
+  ) {
     const prefs = { logLevel: level };
     const result = preferencesSchema.parse(prefs);
     assertEquals(result.logLevel, level);

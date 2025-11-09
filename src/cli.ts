@@ -244,7 +244,8 @@ toolsCommand
         transactional: options.transactional,
       });
     } catch (error) {
-      console.error("Error parsing operations JSON:", error.message);
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("Error parsing operations JSON:", message);
       Deno.exit(1);
     }
   });
@@ -351,6 +352,15 @@ const recommendCommand = new Command()
     await searchCmd.recommendTools(task);
   });
 
+// Discover command (unified discovery with intelligent defaults)
+const discoverCommand = new Command()
+  .name("discover")
+  .description("Discover available servers and tools intelligently")
+  .arguments("[query:string]")
+  .action(async (_options, query) => {
+    await searchCmd.discoverCapabilities(query);
+  });
+
 // Inspect command (alias for servers inspect, but works without "servers" prefix)
 const inspectCommand = new Command()
   .name("inspect")
@@ -367,6 +377,7 @@ cli.command("resources", resourcesCommand);
 cli.command("prompts", promptsCommand);
 cli.command("search", searchCommand);
 cli.command("recommend", recommendCommand);
+cli.command("discover", discoverCommand);
 cli.command("inspect", inspectCommand);
 
 // Cleanup on exit

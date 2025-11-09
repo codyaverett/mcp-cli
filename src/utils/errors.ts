@@ -34,7 +34,8 @@ export class Errors {
     let suggestion: string;
 
     if (!availableServers || availableServers.length === 0) {
-      suggestion = "No servers configured. Run 'mcp servers init' then 'mcp servers add <name> --type stdio --command <cmd>' to add your first server";
+      suggestion =
+        "No servers configured. Run 'mcp servers init' then 'mcp servers add <name> --type stdio --command <cmd>' to add your first server";
     } else {
       suggestion = `Available servers: ${availableServers.join(", ")}`;
     }
@@ -129,9 +130,7 @@ export class Errors {
   ): MCPError {
     return new MCPError({
       code: ErrorCode.TOOL_EXECUTION_FAILED,
-      message: `Tool '${toolName}' on server '${serverName}' failed${
-        reason ? `: ${reason}` : ""
-      }`,
+      message: `Tool '${toolName}' on server '${serverName}' failed${reason ? `: ${reason}` : ""}`,
       cause,
     });
   }

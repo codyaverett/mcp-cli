@@ -420,7 +420,7 @@ Deno.test("Logger - handles special characters in messages", () => {
   logger.setLevel(LogLevel.INFO);
 
   const output = captureStderr(() => {
-    logger.info("Message with \"quotes\" and \nnewlines");
+    logger.info('Message with "quotes" and \nnewlines');
   });
 
   assertEquals(output.includes("quotes"), true);

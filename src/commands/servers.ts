@@ -1,4 +1,4 @@
-import { configLoader, ConfigLoader } from "../config/loader.ts";
+import { ConfigLoader, configLoader } from "../config/loader.ts";
 import { ConfigValidator } from "../config/validator.ts";
 import { clientPool } from "../client/factory.ts";
 import { JSONFormatter } from "../utils/json.ts";
@@ -6,7 +6,7 @@ import { logger } from "../utils/logger.ts";
 import { Errors } from "../utils/errors.ts";
 import { Platform } from "../utils/platform.ts";
 import type { ServerConfig, ServerStatus } from "../types/config.ts";
-import type { ServerAddOptions, ServerListOptions, ServerInitOptions } from "../types/commands.ts";
+import type { ServerAddOptions, ServerInitOptions, ServerListOptions } from "../types/commands.ts";
 
 /**
  * List all configured servers
@@ -72,9 +72,7 @@ export async function listServers(options: ServerListOptions): Promise<void> {
     );
 
     // Filter out disabled servers if requested
-    const filteredServers = options.includeDisabled
-      ? servers
-      : servers.filter((s) => s.enabled);
+    const filteredServers = options.includeDisabled ? servers : servers.filter((s) => s.enabled);
 
     const response = JSONFormatter.withMetadata(
       filteredServers,
@@ -307,7 +305,7 @@ export async function initConfig(options: ServerInitOptions): Promise<void> {
     const exists = await Platform.fileExists(targetPath);
     if (exists && !options.force) {
       throw Errors.validationError(
-        `Configuration file already exists at ${targetPath}. Use --force to overwrite.`
+        `Configuration file already exists at ${targetPath}. Use --force to overwrite.`,
       );
     }
 

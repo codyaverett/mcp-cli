@@ -1,17 +1,14 @@
 import { assertEquals, assertExists } from "@std/assert";
 import {
+  getResourceSchema,
   listResources,
   readResource,
   searchResources,
-  getResourceSchema,
 } from "../../../src/commands/resources.ts";
 import { clientPool } from "../../../src/client/factory.ts";
 import { JSONFormatter } from "../../../src/utils/json.ts";
 import { MockMCPClient } from "../../fixtures/mock-client.ts";
-import {
-  SAMPLE_RESOURCES,
-  createResourceContents,
-} from "../../fixtures/test-data.ts";
+import { createResourceContents, SAMPLE_RESOURCES } from "../../fixtures/test-data.ts";
 import type { StdioServerConfig } from "../../../src/types/config.ts";
 
 // Store original functions
@@ -208,7 +205,8 @@ Deno.test("readResource - with maxTokens", async () => {
 
   try {
     const mockClient = new MockMCPClient();
-    const longContent = "This is a very long content that should be truncated based on token count ".repeat(100);
+    const longContent = "This is a very long content that should be truncated based on token count "
+      .repeat(100);
     const contents = createResourceContents("file:///test.txt", longContent);
     mockClient.setResourceContents("file:///test.txt", contents);
 
@@ -232,7 +230,11 @@ Deno.test("readResource - with maxTokens", async () => {
     });
 
     assertEquals(capturedOutput.length, 1);
-    const output = capturedOutput[0] as { success?: boolean; data?: unknown; metadata?: { truncated?: boolean } };
+    const output = capturedOutput[0] as {
+      success?: boolean;
+      data?: unknown;
+      metadata?: { truncated?: boolean };
+    };
     // Check if we have either success response or data
     assertExists(output);
     // Truncation may or may not occur depending on actual token count

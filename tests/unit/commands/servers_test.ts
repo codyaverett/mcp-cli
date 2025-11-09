@@ -1,20 +1,25 @@
 import { assertEquals, assertExists } from "@std/assert";
 import {
-  listServers,
   addServer,
+  getServerInfo,
+  initConfig,
+  inspectServer,
+  listServers,
   removeServer,
   testServer,
-  getServerInfo,
-  inspectServer,
-  initConfig,
 } from "../../../src/commands/servers.ts";
 import { configLoader } from "../../../src/config/loader.ts";
 import { clientPool } from "../../../src/client/factory.ts";
 import { JSONFormatter } from "../../../src/utils/json.ts";
 import { Platform } from "../../../src/utils/platform.ts";
 import { MockMCPClient } from "../../fixtures/mock-client.ts";
-import { SAMPLE_SERVER_INFO, SAMPLE_TOOLS, SAMPLE_RESOURCES, SAMPLE_PROMPTS } from "../../fixtures/test-data.ts";
-import type { StdioServerConfig, Config } from "../../../src/types/config.ts";
+import {
+  SAMPLE_PROMPTS,
+  SAMPLE_RESOURCES,
+  SAMPLE_SERVER_INFO,
+  SAMPLE_TOOLS,
+} from "../../fixtures/test-data.ts";
+import type { Config, StdioServerConfig } from "../../../src/types/config.ts";
 
 // Store original functions
 const originalOutput = JSONFormatter.output;
@@ -559,7 +564,9 @@ Deno.test("inspectServer - success", async () => {
     await inspectServer("test-server");
 
     assertEquals(capturedOutput.length, 1);
-    const output = capturedOutput[0] as { data: { tools: number; resources: number; prompts: number } };
+    const output = capturedOutput[0] as {
+      data: { tools: number; resources: number; prompts: number };
+    };
     assertEquals(output.data.tools, 3);
     assertEquals(output.data.resources, 3);
     assertEquals(output.data.prompts, 2);

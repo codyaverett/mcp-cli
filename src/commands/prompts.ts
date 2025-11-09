@@ -16,7 +16,8 @@ async function showAvailableServers(): Promise<void> {
     const error = Errors.validationError(
       "No server specified",
     );
-    error.suggestion = "No servers configured. Run 'mcp servers init' then 'mcp servers add <name> --type stdio --command <cmd>' to add your first server";
+    error.suggestion =
+      "No servers configured. Run 'mcp servers init' then 'mcp servers add <name> --type stdio --command <cmd>' to add your first server";
     JSONFormatter.output(error.toJSON());
     Deno.exit(1);
   }
@@ -32,7 +33,10 @@ async function showAvailableServers(): Promise<void> {
 /**
  * List prompts from a server
  */
-export async function listPrompts(serverName: string | undefined, options: ListOptions): Promise<void> {
+export async function listPrompts(
+  serverName: string | undefined,
+  options: ListOptions,
+): Promise<void> {
   if (!serverName) {
     await showAvailableServers();
     return;
@@ -74,7 +78,10 @@ export async function listPrompts(serverName: string | undefined, options: ListO
 /**
  * Get schema for a specific prompt (shows required arguments)
  */
-export async function getPromptSchema(serverName: string | undefined, promptName: string | undefined): Promise<void> {
+export async function getPromptSchema(
+  serverName: string | undefined,
+  promptName: string | undefined,
+): Promise<void> {
   if (!serverName) {
     await showAvailableServers();
     return;

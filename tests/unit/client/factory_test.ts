@@ -1,6 +1,11 @@
-import { assertEquals, assertExists, assert } from "@std/assert";
+import { assert, assertEquals, assertExists } from "@std/assert";
 import { MCPClientFactory, MCPClientPool } from "../../../src/client/factory.ts";
-import type { ServerConfig, StdioServerConfig, SSEServerConfig, HTTPServerConfig } from "../../../src/types/config.ts";
+import type {
+  HTTPServerConfig,
+  ServerConfig,
+  SSEServerConfig,
+  StdioServerConfig,
+} from "../../../src/types/config.ts";
 import { assertThrowsAsync } from "../../fixtures/test-utils.ts";
 
 // Note: We can't easily test the actual client creation without mocking the MCP SDK

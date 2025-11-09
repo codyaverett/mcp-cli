@@ -1,13 +1,15 @@
 import { assertEquals, assertExists } from "@std/assert";
-import { listTools, getToolSchema, executeTool, searchTools, executeBatch } from "../../../src/commands/tools.ts";
+import {
+  executeBatch,
+  executeTool,
+  getToolSchema,
+  listTools,
+  searchTools,
+} from "../../../src/commands/tools.ts";
 import { clientPool } from "../../../src/client/factory.ts";
 import { JSONFormatter } from "../../../src/utils/json.ts";
 import { MockMCPClient } from "../../fixtures/mock-client.ts";
-import {
-  SAMPLE_TOOLS,
-  createSimpleTool,
-  createTextToolResult,
-} from "../../fixtures/test-data.ts";
+import { createSimpleTool, createTextToolResult, SAMPLE_TOOLS } from "../../fixtures/test-data.ts";
 import type { StdioServerConfig } from "../../../src/types/config.ts";
 
 // Store original functions
@@ -422,7 +424,12 @@ Deno.test("executeTool - with maxTokens truncation", async () => {
     const mockClient = new MockMCPClient();
     const tool = createSimpleTool("test-tool", "Test tool");
     mockClient.setTools([tool]);
-    mockClient.setToolResult("test-tool", createTextToolResult("A very long response that should be truncated based on token count to save context"));
+    mockClient.setToolResult(
+      "test-tool",
+      createTextToolResult(
+        "A very long response that should be truncated based on token count to save context",
+      ),
+    );
 
     const config: StdioServerConfig = {
       type: "stdio",
@@ -657,7 +664,12 @@ Deno.test("executeBatch - successful batch execution", async () => {
     });
 
     assertEquals(capturedOutput.length, 1);
-    const output = capturedOutput[0] as { data: { operations: unknown[]; summary: { total: number; succeeded: number; failed: number } } };
+    const output = capturedOutput[0] as {
+      data: {
+        operations: unknown[];
+        summary: { total: number; succeeded: number; failed: number };
+      };
+    };
     assertExists(output.data);
     assertEquals(output.data.operations.length, 2);
     assertEquals(output.data.summary.total, 2);
@@ -742,7 +754,12 @@ Deno.test("executeBatch - non-transactional continues on error", async () => {
     });
 
     assertEquals(capturedOutput.length, 1);
-    const output = capturedOutput[0] as { data: { operations: unknown[]; summary: { total: number; succeeded: number; failed: number } } };
+    const output = capturedOutput[0] as {
+      data: {
+        operations: unknown[];
+        summary: { total: number; succeeded: number; failed: number };
+      };
+    };
     assertExists(output.data);
     assertEquals(output.data.operations.length, 2);
     assertEquals(output.data.summary.total, 2);

@@ -12,12 +12,12 @@ import type {
 import { assertThrowsAsync } from "../../fixtures/test-utils.ts";
 import {
   createMinimalServerInfo,
-  createSimpleTool,
-  createTextToolResult,
-  createResource,
-  createResourceContents,
   createPrompt,
   createPromptResult,
+  createResource,
+  createResourceContents,
+  createSimpleTool,
+  createTextToolResult,
 } from "../../fixtures/test-data.ts";
 
 /**
@@ -414,7 +414,7 @@ Deno.test({
 
     // Access the protected method via a test subclass method
     const result = await (client as unknown as {
-      createTimeoutPromise<T>(p: Promise<T>): Promise<T>
+      createTimeoutPromise<T>(p: Promise<T>): Promise<T>;
     }).createTimeoutPromise(fastPromise);
 
     assertEquals(result, "success");
@@ -434,9 +434,10 @@ Deno.test({
     });
 
     await assertThrowsAsync(
-      () => (client as unknown as {
-        createTimeoutPromise<T>(p: Promise<T>): Promise<T>
-      }).createTimeoutPromise(slowPromise),
+      () =>
+        (client as unknown as {
+          createTimeoutPromise<T>(p: Promise<T>): Promise<T>;
+        }).createTimeoutPromise(slowPromise),
       /Operation timed out after 100ms/,
     );
   },
