@@ -42,6 +42,7 @@ export class StdioMCPClient extends BaseMCPClient {
     logger.info("Connecting to stdio MCP server", {
       server: this.serverName,
       command: this.config.command,
+      args: this.config.args,
     });
 
     try {
@@ -116,7 +117,18 @@ export class StdioMCPClient extends BaseMCPClient {
       }
 
       if (this.process) {
-        this.process.kill();
+        try {
+          // Kill the process and wait for it to exit
+          this.process.kill("SIGTERM");
+          await this.process.status;
+        } catch (error) {
+          // If SIGTERM fails or process is already dead, force kill
+          try {
+            this.process.kill("SIGKILL");
+          } catch {
+            // Ignore if already dead
+          }
+        }
         this.process = null;
       }
 

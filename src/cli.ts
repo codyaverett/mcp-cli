@@ -163,7 +163,7 @@ const toolsCommand = new Command()
   });
 
 toolsCommand
-  .command("list <server:string>")
+  .command("list [server:string]")
   .description("List tools from a server")
   .option("--names-only", "Show only tool names (minimal context, default)")
   .option("--brief", "Show brief descriptions (moderate context)")
@@ -174,18 +174,27 @@ toolsCommand
   });
 
 toolsCommand
-  .command("schema <server:string> <tools...:string>")
+  .command("schema [server:string] [tools...:string]")
   .description("Get schema for specific tool(s) - just-in-time loading")
   .action(async (_options, server, ...tools) => {
     await toolsCmd.getToolSchema(server, tools);
   });
 
 toolsCommand
-  .command("exec <server:string> <tool:string>")
+  .command("exec [server:string] [tool:string]")
   .description("Execute a tool")
-  .option("--args <json:string>", "Tool arguments as JSON", { required: true })
+  .option("--args <json:string>", "Tool arguments as JSON")
   .option("--max-tokens <num:number>", "Maximum tokens in response (truncate if needed)")
   .action(async (options, server, tool) => {
+    if (!server || !tool || !options.args) {
+      await toolsCmd.executeTool({
+        server,
+        tool,
+        args: options.args ? JSON.parse(options.args) : undefined,
+        maxTokens: options.maxTokens,
+      });
+      return;
+    }
     const args = JSON.parse(options.args);
     await toolsCmd.executeTool({
       server,
@@ -202,6 +211,44 @@ toolsCommand
     await toolsCmd.searchTools(server, query);
   });
 
+toolsCommand
+  .command("batch <server:string>")
+  .description("Execute multiple tools sequentially without disconnecting")
+  .option("--operations <json:string>", "Batch operations as JSON array", { required: true })
+  .option("--transactional", "Fail entire batch if any operation fails")
+  .action(async (options, server) => {
+    if (!options.operations) {
+      console.error("Error: --operations is required");
+      Deno.exit(1);
+    }
+
+    try {
+      const operations = JSON.parse(options.operations);
+
+      // Validate operations structure
+      if (!Array.isArray(operations)) {
+        console.error("Error: --operations must be a JSON array");
+        Deno.exit(1);
+      }
+
+      // Add server name to each operation
+      const batchOps = operations.map((op) => ({
+        server,
+        tool: op.tool,
+        args: op.args || {},
+        outputVar: op.outputVar,
+      }));
+
+      await toolsCmd.executeBatch({
+        operations: batchOps,
+        transactional: options.transactional,
+      });
+    } catch (error) {
+      console.error("Error parsing operations JSON:", error.message);
+      Deno.exit(1);
+    }
+  });
+
 // Resources command group
 const resourcesCommand = new Command()
   .name("resources")
@@ -211,7 +258,7 @@ const resourcesCommand = new Command()
   });
 
 resourcesCommand
-  .command("list <server:string>")
+  .command("list [server:string]")
   .description("List resources from a server")
   .option("--names-only", "Show only resource URIs (minimal context)")
   .action(async (options, server) => {
@@ -219,7 +266,7 @@ resourcesCommand
   });
 
 resourcesCommand
-  .command("read <server:string> <uri:string>")
+  .command("read [server:string] [uri:string]")
   .description("Read a specific resource")
   .option("--max-tokens <num:number>", "Maximum tokens in response")
   .action(async (options, server, uri) => {
@@ -253,7 +300,7 @@ const promptsCommand = new Command()
   });
 
 promptsCommand
-  .command("list <server:string>")
+  .command("list [server:string]")
   .description("List available prompts")
   .option("--names-only", "Show only prompt names (minimal context)")
   .action(async (options, server) => {
@@ -261,14 +308,14 @@ promptsCommand
   });
 
 promptsCommand
-  .command("schema <server:string> <prompt:string>")
+  .command("schema [server:string] [prompt:string]")
   .description("Get prompt schema (required arguments)")
   .action(async (_options, server, prompt) => {
     await promptsCmd.getPromptSchema(server, prompt);
   });
 
 promptsCommand
-  .command("get <server:string> <prompt:string>")
+  .command("get [server:string] [prompt:string]")
   .description("Get/execute a prompt with arguments")
   .option("--args <json:string>", "Prompt arguments as JSON")
   .action(async (options, server, prompt) => {

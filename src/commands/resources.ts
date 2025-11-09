@@ -1,13 +1,43 @@
 import { clientPool } from "../client/factory.ts";
+import { configLoader } from "../config/loader.ts";
 import { JSONFormatter } from "../utils/json.ts";
 import { logger } from "../utils/logger.ts";
 import { Errors } from "../utils/errors.ts";
 import type { ListOptions, ResourceReadOptions } from "../types/commands.ts";
 
 /**
+ * Helper to show available servers when server argument is missing
+ */
+async function showAvailableServers(): Promise<void> {
+  const config = await configLoader.getConfig();
+  const servers = Object.keys(config.servers);
+
+  if (servers.length === 0) {
+    const error = Errors.validationError(
+      "No server specified",
+    );
+    error.suggestion = "No servers configured. Run 'mcp servers init' then 'mcp servers add <name> --type stdio --command <cmd>' to add your first server";
+    JSONFormatter.output(error.toJSON());
+    Deno.exit(1);
+  }
+
+  const error = Errors.validationError(
+    "No server specified",
+  );
+  error.suggestion = `Available servers: ${servers.join(", ")}`;
+  JSONFormatter.output(error.toJSON());
+  Deno.exit(1);
+}
+
+/**
  * List resources from a server
  */
-export async function listResources(serverName: string, options: ListOptions): Promise<void> {
+export async function listResources(serverName: string | undefined, options: ListOptions): Promise<void> {
+  if (!serverName) {
+    await showAvailableServers();
+    return;
+  }
+
   const startTime = Date.now();
 
   try {
@@ -45,6 +75,20 @@ export async function listResources(serverName: string, options: ListOptions): P
  * Read a specific resource
  */
 export async function readResource(options: ResourceReadOptions): Promise<void> {
+  if (!options.server) {
+    await showAvailableServers();
+    return;
+  }
+
+  if (!options.uri) {
+    const error = Errors.validationError(
+      "No resource URI specified",
+    );
+    error.suggestion = `Usage: mcp resources read ${options.server} <uri>`;
+    JSONFormatter.output(error.toJSON());
+    Deno.exit(1);
+  }
+
   const startTime = Date.now();
 
   try {

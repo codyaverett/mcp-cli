@@ -20,7 +20,7 @@ Deno.test("Errors - configParseError", () => {
   assertEquals(error.cause, cause);
 });
 
-Deno.test("Errors - serverNotFound", () => {
+Deno.test("Errors - serverNotFound with available servers", () => {
   const error = Errors.serverNotFound("test-server", ["server1", "server2"]);
 
   assertEquals(error instanceof MCPError, true);
@@ -28,6 +28,31 @@ Deno.test("Errors - serverNotFound", () => {
   assertEquals(error.message.includes("test-server"), true);
   assertExists(error.similar);
   assertEquals(error.similar?.length, 2);
+  assertExists(error.suggestion);
+  assertEquals(error.suggestion?.includes("Available servers:"), true);
+  assertEquals(error.suggestion?.includes("server1"), true);
+  assertEquals(error.suggestion?.includes("server2"), true);
+});
+
+Deno.test("Errors - serverNotFound with no servers configured", () => {
+  const error = Errors.serverNotFound("test-server", []);
+
+  assertEquals(error instanceof MCPError, true);
+  assertEquals(error.code, ErrorCode.SERVER_NOT_FOUND);
+  assertEquals(error.message.includes("test-server"), true);
+  assertExists(error.suggestion);
+  assertEquals(error.suggestion?.includes("No servers configured"), true);
+  assertEquals(error.suggestion?.includes("mcp servers init"), true);
+  assertEquals(error.suggestion?.includes("mcp servers add"), true);
+});
+
+Deno.test("Errors - serverNotFound with undefined servers list", () => {
+  const error = Errors.serverNotFound("test-server");
+
+  assertEquals(error instanceof MCPError, true);
+  assertEquals(error.code, ErrorCode.SERVER_NOT_FOUND);
+  assertExists(error.suggestion);
+  assertEquals(error.suggestion?.includes("No servers configured"), true);
 });
 
 Deno.test("Errors - serverAlreadyExists", () => {

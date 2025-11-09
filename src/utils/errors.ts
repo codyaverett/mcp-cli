@@ -31,13 +31,19 @@ export class Errors {
    * Create a server not found error
    */
   static serverNotFound(serverName: string, availableServers?: string[]): MCPError {
+    let suggestion: string;
+
+    if (!availableServers || availableServers.length === 0) {
+      suggestion = "No servers configured. Run 'mcp servers init' then 'mcp servers add <name> --type stdio --command <cmd>' to add your first server";
+    } else {
+      suggestion = `Available servers: ${availableServers.join(", ")}`;
+    }
+
     return new MCPError({
       code: ErrorCode.SERVER_NOT_FOUND,
       message: `Server '${serverName}' not found in configuration`,
       similar: availableServers,
-      suggestion: availableServers && availableServers.length > 0
-        ? `Available servers: ${availableServers.join(", ")}`
-        : "Run 'mcp servers list' to see configured servers",
+      suggestion,
     });
   }
 

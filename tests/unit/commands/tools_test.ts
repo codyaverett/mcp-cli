@@ -1,5 +1,5 @@
 import { assertEquals, assertExists } from "@std/assert";
-import { listTools, getToolSchema, executeTool, searchTools } from "../../../src/commands/tools.ts";
+import { listTools, getToolSchema, executeTool, searchTools, executeBatch } from "../../../src/commands/tools.ts";
 import { clientPool } from "../../../src/client/factory.ts";
 import { JSONFormatter } from "../../../src/utils/json.ts";
 import { MockMCPClient } from "../../fixtures/mock-client.ts";
@@ -612,6 +612,178 @@ Deno.test("searchTools - handles error", async () => {
     await mockClient.connect();
 
     await searchTools("test-server", "test");
+
+    assertEquals(capturedOutput.length, 1);
+    assertEquals(exitCode, 1);
+
+    const output = capturedOutput[0] as { error: unknown };
+    assertExists(output.error);
+
+    clientPool.getClient = originalGetClient;
+  } finally {
+    teardown();
+  }
+});
+
+Deno.test("executeBatch - successful batch execution", async () => {
+  setup();
+
+  try {
+    const mockClient = new MockMCPClient();
+    const tool1 = createSimpleTool("tool1", "First tool");
+    const tool2 = createSimpleTool("tool2", "Second tool");
+    mockClient.setTools([tool1, tool2]);
+    mockClient.setToolResult("tool1", createTextToolResult("Result 1"));
+    mockClient.setToolResult("tool2", createTextToolResult("Result 2"));
+
+    const config: StdioServerConfig = {
+      type: "stdio",
+      command: "test",
+      enabled: true,
+    };
+
+    clientPool.addServer("test-server", config);
+
+    const originalGetClient = clientPool.getClient.bind(clientPool);
+    clientPool.getClient = async () => mockClient;
+
+    await mockClient.connect();
+
+    await executeBatch({
+      operations: [
+        { server: "test-server", tool: "tool1", args: {} },
+        { server: "test-server", tool: "tool2", args: {} },
+      ],
+    });
+
+    assertEquals(capturedOutput.length, 1);
+    const output = capturedOutput[0] as { data: { operations: unknown[]; summary: { total: number; succeeded: number; failed: number } } };
+    assertExists(output.data);
+    assertEquals(output.data.operations.length, 2);
+    assertEquals(output.data.summary.total, 2);
+    assertEquals(output.data.summary.succeeded, 2);
+    assertEquals(output.data.summary.failed, 0);
+
+    clientPool.getClient = originalGetClient;
+  } finally {
+    teardown();
+  }
+});
+
+Deno.test("executeBatch - empty operations list", async () => {
+  setup();
+
+  try {
+    await executeBatch({
+      operations: [],
+    });
+
+    assertEquals(capturedOutput.length, 1);
+    assertEquals(exitCode, 1);
+
+    const output = capturedOutput[0] as { error: unknown };
+    assertExists(output.error);
+  } finally {
+    teardown();
+  }
+});
+
+Deno.test("executeBatch - multiple servers error", async () => {
+  setup();
+
+  try {
+    await executeBatch({
+      operations: [
+        { server: "server1", tool: "tool1", args: {} },
+        { server: "server2", tool: "tool2", args: {} },
+      ],
+    });
+
+    assertEquals(capturedOutput.length, 1);
+    assertEquals(exitCode, 1);
+
+    const output = capturedOutput[0] as { error: unknown };
+    assertExists(output.error);
+  } finally {
+    teardown();
+  }
+});
+
+Deno.test("executeBatch - non-transactional continues on error", async () => {
+  setup();
+
+  try {
+    const mockClient = new MockMCPClient();
+    const tool1 = createSimpleTool("tool1", "First tool");
+    const tool2 = createSimpleTool("tool2", "Second tool");
+    mockClient.setTools([tool1, tool2]);
+    mockClient.setToolResult("tool1", createTextToolResult("Result 1"));
+    // tool2 will fail (not in results)
+
+    const config: StdioServerConfig = {
+      type: "stdio",
+      command: "test",
+      enabled: true,
+    };
+
+    clientPool.addServer("test-server", config);
+
+    const originalGetClient = clientPool.getClient.bind(clientPool);
+    clientPool.getClient = async () => mockClient;
+
+    await mockClient.connect();
+
+    await executeBatch({
+      operations: [
+        { server: "test-server", tool: "tool1", args: {} },
+        { server: "test-server", tool: "nonexistent", args: {} },
+      ],
+      transactional: false,
+    });
+
+    assertEquals(capturedOutput.length, 1);
+    const output = capturedOutput[0] as { data: { operations: unknown[]; summary: { total: number; succeeded: number; failed: number } } };
+    assertExists(output.data);
+    assertEquals(output.data.operations.length, 2);
+    assertEquals(output.data.summary.total, 2);
+    assertEquals(output.data.summary.succeeded, 1);
+    assertEquals(output.data.summary.failed, 1);
+
+    clientPool.getClient = originalGetClient;
+  } finally {
+    teardown();
+  }
+});
+
+Deno.test("executeBatch - transactional fails on error", async () => {
+  setup();
+
+  try {
+    const mockClient = new MockMCPClient();
+    const tool1 = createSimpleTool("tool1", "First tool");
+    mockClient.setTools([tool1]);
+    mockClient.setToolResult("tool1", createTextToolResult("Result 1"));
+
+    const config: StdioServerConfig = {
+      type: "stdio",
+      command: "test",
+      enabled: true,
+    };
+
+    clientPool.addServer("test-server", config);
+
+    const originalGetClient = clientPool.getClient.bind(clientPool);
+    clientPool.getClient = async () => mockClient;
+
+    await mockClient.connect();
+
+    await executeBatch({
+      operations: [
+        { server: "test-server", tool: "tool1", args: {} },
+        { server: "test-server", tool: "nonexistent", args: {} },
+      ],
+      transactional: true,
+    });
 
     assertEquals(capturedOutput.length, 1);
     assertEquals(exitCode, 1);

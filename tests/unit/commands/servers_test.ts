@@ -115,6 +115,30 @@ Deno.test("listServers - names only mode", async () => {
   }
 });
 
+Deno.test("listServers - defaults to names only mode", async () => {
+  setup();
+
+  try {
+    mockConfig.servers = {
+      "server1": { type: "stdio", command: "test1", enabled: true },
+      "server2": { type: "sse", url: "http://localhost:3000", enabled: true },
+    };
+
+    // Call with no options - should default to names-only
+    await listServers({});
+
+    assertEquals(capturedOutput.length, 1);
+    const output = capturedOutput[0] as { data: string[] };
+    assertExists(output.data);
+    assertEquals(Array.isArray(output.data), true);
+    assertEquals(output.data.length, 2);
+    assertEquals(output.data.includes("server1"), true);
+    assertEquals(output.data.includes("server2"), true);
+  } finally {
+    teardown();
+  }
+});
+
 Deno.test("listServers - names only mode with disabled servers", async () => {
   setup();
 

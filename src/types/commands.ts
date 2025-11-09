@@ -69,9 +69,9 @@ export interface SearchOptions {
  * Tool execution options
  */
 export interface ToolExecOptions {
-  server: string;
-  tool: string;
-  args: Record<string, unknown>;
+  server?: string;
+  tool?: string;
+  args?: Record<string, unknown>;
   stream?: boolean;
   maxTokens?: number;
 }
@@ -80,8 +80,8 @@ export interface ToolExecOptions {
  * Resource read options
  */
 export interface ResourceReadOptions {
-  server: string;
-  uri: string;
+  server?: string;
+  uri?: string;
   maxTokens?: number;
 }
 
@@ -89,8 +89,8 @@ export interface ResourceReadOptions {
  * Prompt get options
  */
 export interface PromptGetOptions {
-  server: string;
-  prompt: string;
+  server?: string;
+  prompt?: string;
   args?: Record<string, string>;
 }
 

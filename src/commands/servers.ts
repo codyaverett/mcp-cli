@@ -18,8 +18,11 @@ export async function listServers(options: ServerListOptions): Promise<void> {
     const config = await configLoader.getConfig();
     const serverNames = Object.keys(config.servers);
 
+    // Default to names-only if neither flag is specified
+    const useNamesOnly = options.namesOnly || (!options.full && !options.namesOnly);
+
     // Names only mode (minimal context)
-    if (options.namesOnly) {
+    if (useNamesOnly) {
       const filteredNames = options.includeDisabled
         ? serverNames
         : serverNames.filter((name) => config.servers[name].enabled !== false);

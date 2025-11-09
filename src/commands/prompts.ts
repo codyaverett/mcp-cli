@@ -1,13 +1,43 @@
 import { clientPool } from "../client/factory.ts";
+import { configLoader } from "../config/loader.ts";
 import { JSONFormatter } from "../utils/json.ts";
 import { logger } from "../utils/logger.ts";
 import { Errors } from "../utils/errors.ts";
 import type { ListOptions, PromptGetOptions } from "../types/commands.ts";
 
 /**
+ * Helper to show available servers when server argument is missing
+ */
+async function showAvailableServers(): Promise<void> {
+  const config = await configLoader.getConfig();
+  const servers = Object.keys(config.servers);
+
+  if (servers.length === 0) {
+    const error = Errors.validationError(
+      "No server specified",
+    );
+    error.suggestion = "No servers configured. Run 'mcp servers init' then 'mcp servers add <name> --type stdio --command <cmd>' to add your first server";
+    JSONFormatter.output(error.toJSON());
+    Deno.exit(1);
+  }
+
+  const error = Errors.validationError(
+    "No server specified",
+  );
+  error.suggestion = `Available servers: ${servers.join(", ")}`;
+  JSONFormatter.output(error.toJSON());
+  Deno.exit(1);
+}
+
+/**
  * List prompts from a server
  */
-export async function listPrompts(serverName: string, options: ListOptions): Promise<void> {
+export async function listPrompts(serverName: string | undefined, options: ListOptions): Promise<void> {
+  if (!serverName) {
+    await showAvailableServers();
+    return;
+  }
+
   const startTime = Date.now();
 
   try {
@@ -44,7 +74,21 @@ export async function listPrompts(serverName: string, options: ListOptions): Pro
 /**
  * Get schema for a specific prompt (shows required arguments)
  */
-export async function getPromptSchema(serverName: string, promptName: string): Promise<void> {
+export async function getPromptSchema(serverName: string | undefined, promptName: string | undefined): Promise<void> {
+  if (!serverName) {
+    await showAvailableServers();
+    return;
+  }
+
+  if (!promptName) {
+    const error = Errors.validationError(
+      "No prompt name specified",
+    );
+    error.suggestion = `Usage: mcp prompts schema ${serverName} <prompt-name>`;
+    JSONFormatter.output(error.toJSON());
+    Deno.exit(1);
+  }
+
   const startTime = Date.now();
 
   try {
@@ -77,6 +121,20 @@ export async function getPromptSchema(serverName: string, promptName: string): P
  * Get/execute a prompt with arguments
  */
 export async function getPrompt(options: PromptGetOptions): Promise<void> {
+  if (!options.server) {
+    await showAvailableServers();
+    return;
+  }
+
+  if (!options.prompt) {
+    const error = Errors.validationError(
+      "No prompt name specified",
+    );
+    error.suggestion = `Usage: mcp prompts get ${options.server} <prompt-name> [--args <json>]`;
+    JSONFormatter.output(error.toJSON());
+    Deno.exit(1);
+  }
+
   const startTime = Date.now();
 
   try {
